@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "import_points_dialog.h"
 
 #include <cmath>
 #include <limits>
@@ -101,12 +100,16 @@ MainWindow::MainWindow(QWidget *parent) :
   m_worst_color(QPalette::Window, QColor(0xfaa88e)),
   m_default_color(),
   m_draw_relative_points(false),
-  m_opened_filename("")
+  m_points_importer(new import_points_t(this))
 {
   ui->setupUi(this);
 
   create_chart();
   create_control(m_freq);
+
+  m_points_importer->set_correct_points(m_correct_points);
+  connect(m_points_importer, &import_points_t::points_are_ready,
+    this, &MainWindow::update_points);
 
   m_cubic_spline.set_boundary(tk::spline::second_deriv, 0,
     tk::spline::second_deriv, 0, false);
@@ -327,6 +330,7 @@ void MainWindow::redraw_spline(bool a_checked)
       pressed_cb->setChecked(true);
     }
   }
+  m_points_importer->set_correct_points(m_correct_points);
   repaint_spline();
 }
 
@@ -357,15 +361,16 @@ void MainWindow::reinit_control_buttons()
 }
 
 void MainWindow::update_points(vector<double> a_x, vector<double> a_y,
-  vector<double> a_correct_points, QString a_filename)
+  vector<double> a_correct_points)
 {
   m_freq = std::move(a_x);
   m_current = std::move(a_y);
   m_correct_points = std::move(a_correct_points);
-  m_opened_filename = a_filename;
 
   reinit_control_buttons();
   repaint_spline();
+
+  m_points_importer->get_next_data(import_points_t::move_direction_t::none);
 }
 
 void MainWindow::repaint_spline()
@@ -395,10 +400,7 @@ void MainWindow::on_reset_scale_clicked()
 
 void MainWindow::on_open_file_button_clicked()
 {
-  import_points_dialog_t import_points_win(m_correct_points, m_opened_filename, this);
-  connect(&import_points_win, &import_points_dialog_t::points_are_ready, this,
-    &MainWindow::update_points);
-  import_points_win.exec();
+  m_points_importer->create_import_points_dialog(this);
 }
 
 void MainWindow::on_xstep_spinbox_valueChanged(double a_val)
@@ -439,4 +441,23 @@ void MainWindow::on_checkBox_6_stateChanged(int a_state)
 {
   m_draw_hermite = a_state;
   repaint_spline();
+}
+
+void MainWindow::keyPressEvent(QKeyEvent *a_event)
+{
+  import_points_t::move_direction_t move_direction =
+    import_points_t::move_direction_t::none;
+  if (a_event->text() == "w") {
+    move_direction = import_points_t::move_direction_t::up;
+  } else if (a_event->text() == "s") {
+    move_direction = import_points_t::move_direction_t::down;
+  } else if (a_event->text() == "a") {
+    move_direction = import_points_t::move_direction_t::left;
+  } else if (a_event->text() == "d") {
+    move_direction = import_points_t::move_direction_t::right;
+  }
+  if (move_direction != import_points_t::move_direction_t::none) {
+    double current_x = m_points_importer->get_next_data(move_direction);
+    ui->current_x_label->setText(QString::number(current_x));
+  }
 }

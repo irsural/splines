@@ -7,12 +7,12 @@
 #include <algorithm>
 
 
-import_points_dialog_t::import_points_dialog_t(std::vector<double> a_correct_points,
+import_points_dialog_t::import_points_dialog_t(std::vector<double> a_correct_points, QStandardItemModel *a_csv_model,
   QString a_filepath, QWidget *parent) :
   QDialog(parent),
   ui(new Ui::Dialog),
   m_csv_filepath(a_filepath),
-  m_csv_model(new QStandardItemModel(this))
+  m_csv_model(a_csv_model)
 {
   ui->setupUi(this);
 
@@ -33,7 +33,7 @@ import_points_dialog_t::import_points_dialog_t(std::vector<double> a_correct_poi
 
   if (m_csv_filepath != "") {
     ui->filepath_edit->setText(m_csv_filepath);
-    on_import_button_clicked();
+//    on_import_button_clicked();
   }
 
   QString points_str = "";
@@ -52,7 +52,11 @@ void import_points_dialog_t::on_choose_file_button_clicked()
 {
   m_csv_filepath = QFileDialog::getOpenFileName(this, tr("Open .csv file"),
     "C:\\", tr("CSV Files(*.csv)"));
-  ui->filepath_edit->setText(m_csv_filepath);
+
+  if (m_csv_filepath != "") {
+    ui->filepath_edit->setText(m_csv_filepath);
+    emit filename_changed(m_csv_filepath);
+  }
 }
 
 void import_points_dialog_t::on_import_button_clicked()
@@ -69,16 +73,22 @@ void import_points_dialog_t::on_import_button_clicked()
 
 void import_points_dialog_t::hhSelected(int a_column)
 {
-  ui->points_table->setSelectionMode(QAbstractItemView::SingleSelection);
-  ui->points_table->setSelectionBehavior(QAbstractItemView::SelectColumns);
-  ui->points_table->selectColumn(a_column);
+  if (a_column != 0) {
+    ui->points_table->setSelectionMode(QAbstractItemView::SingleSelection);
+    ui->points_table->setSelectionBehavior(QAbstractItemView::SelectColumns);
+    ui->points_table->selectColumn(a_column);
+    emit selected_col_changed(a_column);
+  }
 }
 
 void import_points_dialog_t::vhSelected(int a_row)
 {
-  ui->points_table->setSelectionMode(QAbstractItemView::SingleSelection);
-  ui->points_table->setSelectionBehavior(QAbstractItemView::SelectRows);
-  ui->points_table->selectRow(a_row);
+  if (a_row != 0) {
+    ui->points_table->setSelectionMode(QAbstractItemView::SingleSelection);
+    ui->points_table->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->points_table->selectRow(a_row);
+    emit selected_row_changed(a_row);
+  }
 }
 
 void import_points_dialog_t::resize_dialog_for_table()
@@ -134,35 +144,6 @@ std::vector<double> import_points_dialog_t::parse_correct_points()
   return correct_points;
 }
 
-
-void import_points_dialog_t::fill_x_y_arrays(std::vector<double>& a_x,
-  std::vector<double>& a_y, bool a_rows_selected)
-{
-  if (a_rows_selected) {
-    int selected_row = ui->points_table->selectionModel()->
-      selectedRows().first().row();
-    //Первый столбик - массив Y
-    for(int i = 1; i < m_csv_model->columnCount(); i++) {
-      QString x_str = m_csv_model->item(0, i)->text();
-      a_x.push_back(x_str.replace(",", ".").toDouble());
-
-      QString y_str = m_csv_model->item(selected_row, i)->text();
-      a_y.push_back(y_str.replace(",", ".").toDouble());
-    }
-  } else {
-    int selected_col = ui->points_table->selectionModel()->
-      selectedColumns().first().column();
-    //Первая строка - массив X
-    for(int i = 1; i < m_csv_model->rowCount(); i++) {
-      QString x_str = m_csv_model->item(i, 0)->text();
-      a_x.push_back(x_str.replace(",", ".").toDouble());
-
-      QString y_str = m_csv_model->item(i, selected_col)->text();
-      a_y.push_back(y_str.replace(",", ".").toDouble());
-    }
-  }
-}
-
 void import_points_dialog_t::on_accept_points_button_clicked()
 {
   bool rows_selected = !ui->points_table->selectionModel()->
@@ -175,34 +156,10 @@ void import_points_dialog_t::on_accept_points_button_clicked()
   if (rows_selected || cols_selected) {
     assert(rows_selected == !cols_selected);
 
-    std::vector<double> x;
-    std::vector<double> y;
-    fill_x_y_arrays(x, y, rows_selected);
-
     std::vector<double>&& correct_points = parse_correct_points();
-    if (correct_points.size() != 1) {
+    emit selection_done(correct_points);
+    close();
 
-      if (!correct_points.size()) {
-        correct_points.push_back(x[0]);
-        correct_points.push_back(x[x.size() - 1]);
-      }
-
-      bool correct_points_are_valid = true;
-      for (auto point: correct_points) {
-        if (std::find(x.begin(), x.end(), point) == x.end()) {
-          correct_points_are_valid = false;
-          break;
-        }
-      }
-      if (correct_points_are_valid) {
-        emit points_are_ready(x, y, correct_points, m_csv_filepath);
-        close();
-      } else {
-        QMessageBox::critical(this, "Error", "Correct points are not valid");
-      }
-    } else {
-      QMessageBox::critical(this, "Error", "Not enough correction points");
-    }
   } else {
     QMessageBox::critical(this, "Error", "Select cells to continue");
   }

@@ -25,12 +25,14 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
+        import_points.cpp \
         import_points_dialog.cpp \
         main.cpp \
         mainwindow.cpp
 
 HEADERS += \
         hermit.h \
+        import_points.h \
         import_points_dialog.h \
         mainwindow.h \
         spline.h

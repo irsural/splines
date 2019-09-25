@@ -16,6 +16,7 @@
 
 #include "spline.h"
 #include "hermit.h"
+#include "import_points.h"
 
 
 using namespace std;
@@ -50,7 +51,7 @@ private slots:
   void on_checkBox_6_stateChanged(int a_state);
 
   void update_points(vector<double> a_x, vector<double> a_y,
-    vector<double> a_correct_points, QString a_filename);
+    vector<double> a_correct_points);
 private:
   Ui::MainWindow *ui;
 
@@ -95,7 +96,7 @@ private:
 
   bool m_draw_relative_points;
 
-  QString m_opened_filename;
+  import_points_t* m_points_importer;
 
   void create_chart();
   void create_control(const vector<double>& a_x);
@@ -105,6 +106,8 @@ private:
 
   void repaint_spline();
   void reinit_control_buttons();
+
+  void keyPressEvent(QKeyEvent *a_event);
 };
 
 #endif // MAINWINDOW_H

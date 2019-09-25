@@ -38,7 +38,7 @@
         <item>
          <widget class="QPushButton" name="open_file_button">
           <property name="text">
-           <string>Open file</string>
+           <string>Открыть файл</string>
           </property>
          </widget>
         </item>
@@ -93,16 +93,6 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="checkBox_2">
-          <property name="text">
-           <string>Auto step</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
          <widget class="QDoubleSpinBox" name="xstep_spinbox">
           <property name="decimals">
            <number>5</number>
@@ -110,16 +100,26 @@
          </widget>
         </item>
         <item>
+         <widget class="QCheckBox" name="checkBox_2">
+          <property name="text">
+           <string>Авто шаг</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QPushButton" name="reset_scale">
           <property name="text">
-           <string>Reset scale</string>
+           <string>Сбросить масштаб</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QCheckBox" name="checkBox_3">
           <property name="text">
-           <string>Auto scale</string>
+           <string>Авто масштаб</string>
           </property>
           <property name="checked">
            <bool>true</bool>
@@ -129,14 +129,14 @@
         <item>
          <widget class="QCheckBox" name="checkBox">
           <property name="text">
-           <string>Relative</string>
+           <string>Относительные велич.</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QCheckBox" name="checkBox_4">
           <property name="text">
-           <string>Draw linear graph</string>
+           <string>Линейная интерполяция</string>
           </property>
           <property name="checked">
            <bool>true</bool>
@@ -146,7 +146,7 @@
         <item>
          <widget class="QCheckBox" name="checkBox_5">
           <property name="text">
-           <string>Draw cubic graph</string>
+           <string>Кубич. интерполяция</string>
           </property>
           <property name="checked">
            <bool>false</bool>
@@ -156,10 +156,35 @@
         <item>
          <widget class="QCheckBox" name="checkBox_6">
           <property name="text">
-           <string>Draw hermite graph</string>
+           <string>Эрмитова интерполяция</string>
           </property>
           <property name="checked">
            <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>Управление:
+След.частота - &quot;s&quot;
+Пред.частота - &quot;w&quot;
+След.амплитуда - &quot;d&quot;
+Пред.амплитуда - &quot;a&quot;</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>Текущая частота/амплитуда:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="current_x_label">
+          <property name="text">
+           <string/>
           </property>
          </widget>
         </item>
