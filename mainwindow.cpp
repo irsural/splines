@@ -71,9 +71,9 @@ void MainWindow::create_chart()
   mp_linear_data->setName("linear");
   mp_cubic_data->setName("cubic");
 
-  mp_axisX->setLabelFormat("%f");
+  mp_axisX->setLabelFormat("%g");
   mp_chart->addAxis(mp_axisX, Qt::AlignBottom);
-  mp_axisY->setLabelFormat("%f");
+  mp_axisY->setLabelFormat("%g");
   mp_chart->addAxis(mp_axisY, Qt::AlignLeft);
 
   mp_chart_view->setRenderHint(QPainter::Antialiasing);
@@ -289,12 +289,12 @@ void MainWindow::draw_lines(double a_min, double a_max, double a_step)
     mp_axisY->setRange(m_min_y, m_max_y);
   }
 
-  double x_tick_interval = calc_chart_tick_interval(a_min, a_max,
-    ui->spinbox_ticks_count->value());
+  double x_tick_interval = calc_chart_tick_interval(mp_axisX->min(),
+    mp_axisX->max(), ui->spinbox_ticks_count->value());
   mp_axisX->setTickInterval(x_tick_interval);
   mp_axisX->setTickType(QValueAxis::TickType::TicksDynamic);
-  double y_tick_interval = calc_chart_tick_interval(m_min_y, m_max_y,
-    ui->spinbox_ticks_count->value());
+  double y_tick_interval = calc_chart_tick_interval(mp_axisY->min(),
+    mp_axisY->max(), ui->spinbox_ticks_count->value());
   mp_axisY->setTickInterval(y_tick_interval);
   mp_axisY->setTickType(QValueAxis::TickType::TicksDynamic);
 }

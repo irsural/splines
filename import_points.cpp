@@ -4,7 +4,7 @@
 
 import_points_t::import_points_t(QObject *parent) :
   QObject(parent),
-  m_last_file_name(""),
+  m_last_file_name("C:\\"),
   m_correct_points(),
   m_csv_model(new QStandardItemModel(this)),
   m_selected_row(0),

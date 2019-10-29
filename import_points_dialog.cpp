@@ -50,7 +50,7 @@ import_points_dialog_t::~import_points_dialog_t()
 void import_points_dialog_t::on_choose_file_button_clicked()
 {
   m_csv_filepath = QFileDialog::getOpenFileName(this, tr("Open .csv file"),
-    "C:\\", tr("CSV Files(*.csv)"));
+    m_csv_filepath, tr("CSV Files(*.csv)"));
 
   if (m_csv_filepath != "") {
     ui->filepath_edit->setText(m_csv_filepath);
