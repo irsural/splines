@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>799</width>
-    <height>567</height>
+    <width>884</width>
+    <height>710</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,7 +21,7 @@
        <enum>QLayout::SetDefaultConstraint</enum>
       </property>
       <item>
-       <layout class="QHBoxLayout" name="chart_layout">
+       <layout class="QHBoxLayout" name="chart_layout" stretch="">
         <property name="spacing">
          <number>6</number>
         </property>
@@ -49,7 +49,7 @@
              <x>0</x>
              <y>0</y>
              <width>398</width>
-             <height>510</height>
+             <height>653</height>
             </rect>
            </property>
            <property name="maximumSize">
@@ -145,13 +145,6 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="reset_scale">
-          <property name="text">
-           <string>Сбросить масштаб</string>
-          </property>
-         </widget>
-        </item>
-        <item>
          <widget class="QCheckBox" name="checkBox_3">
           <property name="text">
            <string>Авто масштаб</string>
@@ -162,9 +155,9 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="checkBox">
+         <widget class="QPushButton" name="reset_scale">
           <property name="text">
-           <string>Относительные велич.</string>
+           <string>Сбросить масштаб</string>
           </property>
          </widget>
         </item>
@@ -229,11 +222,42 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="show_all_graps_button">
+         <widget class="QCheckBox" name="checkBox">
           <property name="text">
-           <string>Отобразить все графики</string>
+           <string>Относительные велич.</string>
           </property>
          </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_6">
+          <property name="text">
+           <string>Выделять значения выше
+(по модулю)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QDoubleSpinBox" name="spinbox_mark_limit">
+          <property name="decimals">
+           <number>4</number>
+          </property>
+          <property name="singleStep">
+           <double>0.001000000000000</double>
+          </property>
+          <property name="value">
+           <double>0.010000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_7">
+          <property name="text">
+           <string>Количество точек на осях</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="spinbox_ticks_count"/>
         </item>
         <item>
          <spacer name="verticalSpacer">
@@ -259,7 +283,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>799</width>
+     <width>884</width>
      <height>21</height>
     </rect>
    </property>

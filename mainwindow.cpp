@@ -41,6 +41,7 @@ MainWindow::MainWindow(QWidget *parent) :
   mp_diff_linear_labels(m_freq.size()),
   m_better_color(QPalette::Window, QColor(0xbfffbd)),
   m_worst_color(QPalette::Window, QColor(0xfaa88e)),
+  m_limit_color(QPalette::Window, QColor(0xffe9d1)),
   m_default_color(),
   m_draw_relative_points(false),
   m_points_importer(new import_points_t(this))
@@ -204,6 +205,13 @@ void MainWindow::calc_difs()
     if (worst_linear_val < abs(linear_diff)) {
       worst_linear_val = abs(linear_diff);
       worst_linear_ind = label_ind;
+    }
+
+    if (abs(cubic_diff) > ui->spinbox_mark_limit->value()) {
+      mp_diff_cubic_labels[label_ind]->setPalette(m_limit_color);
+    }
+    if (abs(hermite_diff) > ui->spinbox_mark_limit->value()) {
+      mp_diff_hermite_labels[label_ind]->setPalette(m_limit_color);
     }
 
     label_ind++;

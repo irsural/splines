@@ -97,6 +97,7 @@ private:
 
   QPalette m_better_color;
   QPalette m_worst_color;
+  QPalette m_limit_color;
   QPalette m_default_color;
 
   bool m_draw_relative_points;
