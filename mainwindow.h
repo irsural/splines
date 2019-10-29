@@ -52,8 +52,10 @@ private slots:
   void on_checkBox_6_stateChanged(int a_state);
   void update_points(vector<double> a_x, vector<double> a_y,
     vector<double> a_correct_points);
-
   void on_show_all_graps_button_clicked();
+  void on_button_apply_ticks_count_clicked();
+
+  void chart_was_zoomed(qreal min, qreal max);
 
 private:
   Ui::MainWindow *ui;

@@ -90,6 +90,9 @@ void MainWindow::create_chart()
   ui->xmin_spinbox->setValue(m_min_x);
   ui->xmax_spinbox->setValue(m_max_x);
   ui->xstep_spinbox->setValue(m_x_step);
+
+  connect(mp_axisX, &QValueAxis::rangeChanged, this, &MainWindow::chart_was_zoomed);
+  connect(mp_axisY, &QValueAxis::rangeChanged, this, &MainWindow::chart_was_zoomed);
 }
 
 void MainWindow::create_control(const vector<double>& a_x)
@@ -284,14 +287,16 @@ void MainWindow::draw_lines(double a_min, double a_max, double a_step)
   if (m_auto_scale) {
     mp_axisX->setRange(a_min, a_max);
     mp_axisY->setRange(m_min_y, m_max_y);
-
-    double x_tick_interval = calc_chart_tick_interval(a_min, a_max, 10);
-    mp_axisX->setTickInterval(x_tick_interval);
-    mp_axisX->setTickType(QValueAxis::TickType::TicksDynamic);
-    double y_tick_interval = calc_chart_tick_interval(m_min_y, m_max_y, 10);
-    mp_axisY->setTickInterval(y_tick_interval);
-    mp_axisY->setTickType(QValueAxis::TickType::TicksDynamic);
   }
+
+  double x_tick_interval = calc_chart_tick_interval(a_min, a_max,
+    ui->spinbox_ticks_count->value());
+  mp_axisX->setTickInterval(x_tick_interval);
+  mp_axisX->setTickType(QValueAxis::TickType::TicksDynamic);
+  double y_tick_interval = calc_chart_tick_interval(m_min_y, m_max_y,
+    ui->spinbox_ticks_count->value());
+  mp_axisY->setTickInterval(y_tick_interval);
+  mp_axisY->setTickType(QValueAxis::TickType::TicksDynamic);
 }
 
 std::tuple<double, double> get_double_power(double a_val)
@@ -605,4 +610,22 @@ void MainWindow::on_show_all_graps_button_clicked()
 //    linear_series[i] = new QLineSeries(this);
 //    draw_line(x, y, linear_series[i]);
 //  }
+}
+
+void MainWindow::on_button_apply_ticks_count_clicked()
+{
+  m_auto_scale = false;
+  repaint_spline();
+  m_auto_scale = true;
+}
+
+void MainWindow::chart_was_zoomed(qreal a_min, qreal a_max)
+{
+  QObject* obj = QObject::sender();
+  QValueAxis* zoomed_axis = qobject_cast<QValueAxis*>(obj);
+
+  double tick_interval = calc_chart_tick_interval(a_min, a_max,
+    ui->spinbox_ticks_count->value());
+  zoomed_axis->setTickInterval(tick_interval);
+  zoomed_axis->setTickType(QValueAxis::TickType::TicksDynamic);
 }
