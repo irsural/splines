@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1510</width>
-    <height>903</height>
+    <width>796</width>
+    <height>527</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -183,8 +183,20 @@
         </item>
         <item>
          <widget class="QLabel" name="current_x_label">
+          <property name="font">
+           <font>
+            <pointsize>20</pointsize>
+           </font>
+          </property>
           <property name="text">
            <string/>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="show_all_graps_button">
+          <property name="text">
+           <string>Отобразить все графики</string>
           </property>
          </widget>
         </item>
@@ -212,7 +224,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1510</width>
+     <width>796</width>
      <height>21</height>
     </rect>
    </property>

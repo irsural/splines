@@ -33,7 +33,6 @@ import_points_dialog_t::import_points_dialog_t(std::vector<double> a_correct_poi
 
   if (m_csv_filepath != "") {
     ui->filepath_edit->setText(m_csv_filepath);
-//    on_import_button_clicked();
   }
 
   QString points_str = "";
@@ -56,6 +55,7 @@ void import_points_dialog_t::on_choose_file_button_clicked()
   if (m_csv_filepath != "") {
     ui->filepath_edit->setText(m_csv_filepath);
     emit filename_changed(m_csv_filepath);
+    on_import_button_clicked();
   }
 }
 

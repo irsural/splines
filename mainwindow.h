@@ -17,6 +17,7 @@
 #include "spline.h"
 #include "hermit.h"
 #include "import_points.h"
+#include "linear_interpolation.hpp"
 
 
 using namespace std;
@@ -49,9 +50,11 @@ private slots:
   void on_checkBox_4_stateChanged(int a_state);
   void on_checkBox_5_stateChanged(int a_state);
   void on_checkBox_6_stateChanged(int a_state);
-
   void update_points(vector<double> a_x, vector<double> a_y,
     vector<double> a_correct_points);
+
+  void on_show_all_graps_button_clicked();
+
 private:
   Ui::MainWindow *ui;
 
@@ -63,8 +66,9 @@ private:
   QChart* mp_chart;
   QChartView* mp_chart_view;
 
-  tk::spline m_cubic_spline;
+  ::tk::spline m_cubic_spline;
   pchip_t<double> m_hermite_spline;
+  irs::line_interp_t<double> m_linear_interpolation;
 
   QLineSeries* mp_linear_data;
   QLineSeries* mp_cubic_data;
@@ -89,6 +93,7 @@ private:
   vector<QCheckBox*> mp_point_checkboxes;
   vector<QLabel*> mp_diff_cubic_labels;
   vector<QLabel*> mp_diff_hermite_labels;
+  vector<QLabel*> mp_diff_linear_labels;
 
   QPalette m_better_color;
   QPalette m_worst_color;
@@ -103,6 +108,14 @@ private:
   void calc_splines(vector<double> &a_points);
   void calc_difs();
   void draw_lines(double a_min, double a_max, double a_step);
+
+  void fill_cubic(vector<double>& a_x, vector<double>& a_y, double a_min,
+    double a_max, double a_step);
+  void fill_hermite(vector<double>& a_x, vector<double>& a_y,
+    double a_min, double a_max, double a_step);
+  void fill_linear(vector<double>& a_x, vector<double>& a_y);
+  void draw_line(const vector<double>& a_x, const vector<double> &a_y,
+    QLineSeries* a_series);
 
   void repaint_spline();
   void reinit_control_buttons();

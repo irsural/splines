@@ -10,83 +10,25 @@
 MainWindow::MainWindow(QWidget *parent) :
   QMainWindow(parent),
   ui(new Ui::MainWindow),
-  m_freq {
-/*
-    40,43,45,47,51,53,55,58,60,62,66,68,70,73,75,78,82,85,88,90,95,
-    100,107,115,120,125,130,140,150,170,190,220,245,280,310,350,400,
-    500,630,800,1000,1200,1400,1600,1800,2000
-*/
-
-    40,43,47,51,55,60,70,80,90,100,120,150,200,270,300,400,500,600,700,
-    800,900,1000,1100,1200,1300,1400,1550,1700,1850,2000
-
-/*
-    0.005, 0.01, 0.012, 0.015, 0.017, 0.02, 0.022, 0.025, 0.03, 0.035,
-    0.04, 0.045, 0.05, 0.055, 0.06, 0.065, 0.07, 0.075, 0.08, 0.085,
-    0.09, 0.095, 0.1
-*/
-  },
-  m_current {
-/*
-    1.124160724,1.123531515,1.123305434,
-    1.123028894,1.122647062,1.122525678,1.122329487,1.122114651,
-    1.121953222,1.121781552,1.121655044,1.121583428,1.121435291,
-    1.121308576,1.12120405,1.121133936,1.120987367,1.120859157,
-    1.120751864,1.12069737,1.12059512,1.120506705,1.120372833,
-    1.120263564,1.120198705,1.120142823,1.120052362,1.119981992,
-    1.119960749,1.119886246,1.119829218,1.119790066,1.119763047,
-    1.11968431306542 ,1.119676734,1.119676047,1.119678627,1.119670334,
-    1.119779062,1.119859467,1.119912178,1.120020336,1.120075987,
-    1.120179551,1.12026671,1.120341176
-*/
-
-    0.0975659955342365,0.0975275796083106,0.0974902362425586,0.0974626799653618,
-    0.0974428273311505,0.0974190078860744,0.0973867728755724,0.0973670305493144,
-    0.097356562748723,0.0973469938187897,0.0973328500162498,0.0973229205373056,
-    0.0973166424972046,0.0973116992231381,0.0973109104638724,0.0973123826935796,
-    0.0973161706285211,0.0973225522548119,0.0973278484591096,0.0973360484177552,
-    0.0973427546505328,0.0973505326522316,0.0973620306676114,0.0973731875398392,
-    0.0973816450679029,0.0973955016326368,0.0974166999863728,0.0974368623084973,
-    0.0974635746790084,0.0974903935919296
-
-/*
-    0.00487195071094411, 0.0097434035308675, 0.0116916480232211, 0.014614234246976,
-    0.0165628298467953, 0.0194855261107702, 0.021434516567259, 0.0243574436987256,
-    0.0292289525344483, 0.0341005974305858, 0.0389726369759468, 0.0438446322421415,
-    0.0487166893668983, 0.0535886454321949, 0.0584610662874094, 0.0633339463601836,
-    0.0682064924543303, 0.0730788352069786, 0.0779509458907587, 0.0828234277541804,
-    0.0876964685548731, 0.0925689873120506, 0.097441018511837
-*/
-    /*
-    0.004869778,0.009739344,0.011686854,0.014609232,0.016556957,0.019478652,
-    0.021426602,0.024348174,0.029217819,0.034087368,0.038957179,0.043826781,
-    0.048696631,0.053566454,0.058436382,0.063306662,0.06817663,0.073046623,
-    0.077916614,0.082786384,0.087656405,0.092525789,0.097395678
-*/
-  },
-  m_correct_points {
-
-    40, 47, 70, 120, 300, 1000, 1400, 2000
-
-/*
-    0.005, 0.03, 0.1
-*/
-  },
+  m_freq(),
+  m_current(),
+  m_correct_points { 40, 47, 70, 120, 300, 1000, 1400, 2000 },
   m_points(),
   mp_chart(new QChart()),
   mp_chart_view(new QChartView(mp_chart, this)),
   m_cubic_spline(),
   m_hermite_spline(),
+  m_linear_interpolation(),
   mp_linear_data(new QLineSeries(this)),
   mp_cubic_data(new QLineSeries(this)),
   mp_hermite_data(new QLineSeries(this)),
   mp_axisX(new QValueAxis(this)),
-  m_min_x(m_freq[0]),
-  m_max_x(m_freq[m_freq.size() - 1]),
+  m_min_x(0),
+  m_max_x(0),
   mp_axisY(new QValueAxis(this)),
-  m_min_y(0),
-  m_max_y(0),
-  m_x_step((m_freq[m_freq.size() - 1] - m_freq[0]) / 400),
+  m_min_y(std::numeric_limits<double>::max()),
+  m_max_y(std::numeric_limits<double>::min()),
+  m_x_step(0),
   m_auto_step(true),
   m_auto_scale(true),
   m_draw_linear(true),
@@ -96,6 +38,7 @@ MainWindow::MainWindow(QWidget *parent) :
   mp_point_checkboxes(m_freq.size()),
   mp_diff_cubic_labels(m_freq.size()),
   mp_diff_hermite_labels(m_freq.size()),
+  mp_diff_linear_labels(m_freq.size()),
   m_better_color(QPalette::Window, QColor(0xbfffbd)),
   m_worst_color(QPalette::Window, QColor(0xfaa88e)),
   m_default_color(),
@@ -105,15 +48,14 @@ MainWindow::MainWindow(QWidget *parent) :
   ui->setupUi(this);
 
   create_chart();
-  create_control(m_freq);
 
-  m_points_importer->set_correct_points(m_correct_points);
   connect(m_points_importer, &import_points_t::points_are_ready,
     this, &MainWindow::update_points);
 
   m_cubic_spline.set_boundary(tk::spline::second_deriv, 0,
     tk::spline::second_deriv, 0, false);
-  repaint_spline();
+
+  m_points_importer->set_correct_points(m_correct_points);
 }
 
 MainWindow::~MainWindow()
@@ -142,6 +84,7 @@ void MainWindow::create_chart()
   header->addWidget(new QLabel("Frequency", this));
   header->addWidget(new QLabel("Cubic", this));
   header->addWidget(new QLabel("Hermite", this));
+  header->addWidget(new QLabel("Linear", this));
 
   ui->xmin_spinbox->setValue(m_min_x);
   ui->xmax_spinbox->setValue(m_max_x);
@@ -175,6 +118,10 @@ void MainWindow::create_control(const vector<double>& a_x)
     mp_diff_hermite_labels[row_ind]->setAutoFillBackground(true);
     mp_layouts[row_ind]->addWidget(mp_diff_hermite_labels[row_ind]);
 
+    mp_diff_linear_labels[row_ind] = new QLabel("0.00000", this);
+    mp_diff_linear_labels[row_ind]->setAutoFillBackground(true);
+    mp_layouts[row_ind]->addWidget(mp_diff_linear_labels[row_ind]);
+
     row_ind++;
   }
 }
@@ -199,7 +146,11 @@ void MainWindow::calc_splines(vector<double> &a_points)
 
   m_cubic_spline.set_points(a_points, correct_values);
   m_hermite_spline.set_points(a_points.data(),
-    correct_values.data(), a_points.size());
+    correct_values.data(), int(a_points.size()));
+
+  m_linear_interpolation.clear();
+  m_linear_interpolation.assign(a_points.data(), correct_values.data(),
+    int(a_points.size()));
 
   calc_difs();
 }
@@ -210,6 +161,8 @@ void MainWindow::calc_difs()
   double worst_cubic_val = 0;
   size_t worst_hermite_ind = 0;
   double worst_hermite_val = 0;
+  size_t worst_linear_ind = 0;
+  double worst_linear_val = 0;
 
   size_t label_ind = 0;
   for (auto a_pair: m_points) {
@@ -221,8 +174,12 @@ void MainWindow::calc_difs()
     double hermite_value = m_hermite_spline(a_pair.first);
     double hermite_diff = (real_value - hermite_value) / hermite_value * 100;
 
+    double linear_value = m_linear_interpolation.calc(a_pair.first);
+    double linear_diff = (real_value - linear_value) / linear_value * 100;
+
     mp_diff_cubic_labels[label_ind]->setText(QString::number(cubic_diff));
     mp_diff_hermite_labels[label_ind]->setText(QString::number(hermite_diff));
+    mp_diff_linear_labels[label_ind]->setText(QString::number(linear_diff));
 
     if (abs(cubic_diff) < abs(hermite_diff)) {
       mp_diff_cubic_labels[label_ind]->setPalette(m_better_color);
@@ -234,6 +191,7 @@ void MainWindow::calc_difs()
       mp_diff_cubic_labels[label_ind]->setPalette(m_default_color);
       mp_diff_hermite_labels[label_ind]->setPalette(m_default_color);
     }
+    mp_diff_linear_labels[label_ind]->setPalette(m_default_color);
 
     if (worst_cubic_val < abs(cubic_diff)) {
       worst_cubic_val = abs(cubic_diff);
@@ -243,11 +201,16 @@ void MainWindow::calc_difs()
       worst_hermite_val = abs(hermite_diff);
       worst_hermite_ind = label_ind;
     }
+    if (worst_linear_val < abs(linear_diff)) {
+      worst_linear_val = abs(linear_diff);
+      worst_linear_ind = label_ind;
+    }
 
     label_ind++;
   }
   mp_diff_cubic_labels[worst_cubic_ind]->setPalette(m_worst_color);
   mp_diff_hermite_labels[worst_hermite_ind]->setPalette(m_worst_color);
+  mp_diff_linear_labels[worst_linear_ind]->setPalette(m_worst_color);
 }
 
 void MainWindow::draw_lines(double a_min, double a_max, double a_step)
@@ -313,6 +276,100 @@ void MainWindow::draw_lines(double a_min, double a_max, double a_step)
   }
 }
 
+
+
+void MainWindow::fill_cubic(vector<double> &a_x, vector<double> &a_y,
+  double a_min, double a_max, double a_step)
+{
+  a_x.clear();
+  a_y.clear();
+  size_t points_count = static_cast<size_t>((a_max - a_min) / a_step);
+  a_x.reserve(points_count);
+  a_y.reserve(points_count);
+
+  double relative_point = m_points[m_correct_points[0]] / m_correct_points[0];
+
+  for (double i = a_min; i < a_max; i += a_step) {
+    double cubic_val = m_cubic_spline(i);
+
+    if (m_draw_relative_points) {
+      cubic_val = (cubic_val/i - relative_point) * 100;
+    }
+    a_x.push_back(i);
+    a_y.push_back(cubic_val);
+  }
+}
+
+void MainWindow::fill_hermite(vector<double>& a_x, vector<double>& a_y,
+  double a_min, double a_max, double a_step)
+{
+  a_x.clear();
+  a_y.clear();
+  size_t points_count = static_cast<size_t>((a_max - a_min) / a_step);
+  a_x.reserve(points_count);
+  a_y.reserve(points_count);
+
+  double relative_point = m_points[m_correct_points[0]] / m_correct_points[0];
+
+  for (double i = a_min; i < a_max; i += a_step) {
+    double hermite_val = m_hermite_spline(i);
+
+    if (m_draw_relative_points) {
+      hermite_val = (hermite_val/i - relative_point) * 100;
+    }
+    a_x.push_back(i);
+    a_y.push_back(hermite_val);
+  }
+}
+
+void MainWindow::fill_linear(vector<double>& a_x, vector<double>& a_y)
+{
+  a_x.clear();
+  a_y.clear();
+  a_x.reserve(m_freq.size());
+  a_y.reserve(m_freq.size());
+
+  double relative_point = m_points[m_correct_points[0]] / m_correct_points[0];
+
+  for (size_t i = 0; i < m_freq.size(); i++) {
+    double value = m_current[i];
+    if (m_draw_relative_points) {
+      value = (value/m_freq[i] - relative_point) * 100;
+    }
+    a_x.push_back(m_freq[i]);
+    a_y.push_back(value);
+  }
+}
+
+void MainWindow::draw_line(const vector<double>& a_x,
+  const vector<double> &a_y, QLineSeries* a_series)
+{
+  a_series->clear();
+  double min_y = std::numeric_limits<double>::max();
+  double max_y = std::numeric_limits<double>::min();
+
+  for (size_t i = 0; i < a_x.size(); i++) {
+    double val = a_y[i];
+    a_series->append(a_x[i], val);
+
+    min_y = min_y > val ? val : min_y;
+    max_y = max_y < val ? val : max_y;
+  }
+  m_max_y = m_max_y < max_y ? max_y : m_max_y;
+  m_min_y = m_min_y > min_y ? min_y : m_min_y;
+
+  if (m_auto_scale) {
+    mp_axisY->setRange(m_min_y, m_max_y);
+    mp_axisX->setRange(a_x[0], a_x[a_x.size() - 1]);
+  }
+
+  mp_chart->addSeries(a_series);
+
+  a_series->attachAxis(mp_axisX);
+  a_series->attachAxis(mp_axisY);
+}
+
+
 void MainWindow::redraw_spline(bool a_checked)
 {
   QObject* obj = QObject::sender();
@@ -341,17 +398,19 @@ void MainWindow::reinit_control_buttons()
     if (mp_point_checkboxes[i] != nullptr) delete mp_point_checkboxes[i];
     if (mp_diff_cubic_labels[i] != nullptr) delete mp_diff_cubic_labels[i];
     if (mp_diff_hermite_labels[i] != nullptr) delete mp_diff_hermite_labels[i];
+    if (mp_diff_linear_labels[i] != nullptr) delete mp_diff_linear_labels[i];
   }
 
   m_min_x = m_freq[0];
   m_max_x = m_freq[m_freq.size() - 1];
-  m_min_y = 0;
-  m_max_y = 0;
+  m_min_y = std::numeric_limits<double>::max();
+  m_max_y = std::numeric_limits<double>::min();
   m_x_step = (m_freq[m_freq.size() - 1] - m_freq[0]) / 400;
   mp_layouts.resize(m_freq.size());
   mp_point_checkboxes.resize(m_freq.size());
   mp_diff_cubic_labels.resize(m_freq.size());
   mp_diff_hermite_labels.resize(m_freq.size());
+  mp_diff_linear_labels.resize(m_freq.size());
 
   ui->xmin_spinbox->setValue(m_min_x);
   ui->xmax_spinbox->setValue(m_max_x);
@@ -375,8 +434,28 @@ void MainWindow::update_points(vector<double> a_x, vector<double> a_y,
 
 void MainWindow::repaint_spline()
 {
-  calc_splines(m_correct_points);
-  draw_lines(m_min_x, m_max_x, m_x_step);
+  if (m_freq.size()) {
+//    vector<double> x;
+//    vector<double> y;
+
+//    if (m_draw_linear) {
+//      fill_linear(x, y);
+//      draw_line(x, y, mp_linear_data);
+//    }
+
+    calc_splines(m_correct_points);
+    draw_lines(m_min_x, m_max_x, m_x_step);
+
+//    if (m_draw_cubic) {
+//      fill_cubic(x, y, m_min_x, m_max_x, m_x_step);
+//      draw_line(x, y, mp_cubic_data);
+//    }
+
+//    if (m_draw_hermite) {
+//      fill_hermite(x, y, m_min_x, m_max_x, m_x_step);
+//      draw_line(x, y, mp_hermite_data);
+//    }
+  }
 }
 
 void MainWindow::on_xmin_spinbox_valueChanged(double a_val)
@@ -422,7 +501,7 @@ void MainWindow::on_checkBox_2_stateChanged(int a_state)
 
 void MainWindow::on_checkBox_3_stateChanged(int a_state)
 {
-    m_auto_scale = a_state;
+  m_auto_scale = a_state;
 }
 
 void MainWindow::on_checkBox_4_stateChanged(int a_state)
@@ -461,3 +540,20 @@ void MainWindow::keyPressEvent(QKeyEvent *a_event)
     ui->current_x_label->setText(QString::number(current_x));
   }
 }
+
+void MainWindow::on_show_all_graps_button_clicked()
+{
+//  vector<QLineSeries*> linear_series;
+//  int graphs_count = m_points_importer->is_rows_selected() ?
+//    m_points_importer->get_rows_count() : m_points_importer->get_cols_count();
+
+//  for (int i = 0; i < graphs_count; i++) {
+//    vector<double> x;
+//    vector<double> y;
+//    m_points_importer->get_data(x, y, i);
+//    linear_series[i] = new QLineSeries(this);
+//    draw_line(x, y, linear_series[i]);
+//  }
+}
+
+

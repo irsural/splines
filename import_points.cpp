@@ -55,7 +55,7 @@ void import_points_t::set_new_col(int a_col)
 }
 
 void import_points_t::fill_x_y_arrays(std::vector<double>& a_x,
-  std::vector<double>& a_y, bool a_rows_selected)
+  std::vector<double>& a_y, int a_row, int a_col, bool a_rows_selected)
 {
   if (a_rows_selected) {
     //Первый столбик - массив Y
@@ -63,7 +63,7 @@ void import_points_t::fill_x_y_arrays(std::vector<double>& a_x,
       QString x_str = m_csv_model->item(0, i)->text();
       a_x.push_back(x_str.replace(",", ".").toDouble());
 
-      QString y_str = m_csv_model->item(m_selected_row, i)->text();
+      QString y_str = m_csv_model->item(a_row, i)->text();
       a_y.push_back(y_str.replace(",", ".").toDouble());
     }
   } else {
@@ -72,7 +72,7 @@ void import_points_t::fill_x_y_arrays(std::vector<double>& a_x,
       QString x_str = m_csv_model->item(i, 0)->text();
       a_x.push_back(x_str.replace(",", ".").toDouble());
 
-      QString y_str = m_csv_model->item(i, m_selected_col)->text();
+      QString y_str = m_csv_model->item(i, a_col)->text();
       a_y.push_back(y_str.replace(",", ".").toDouble());
     }
   }
@@ -82,7 +82,7 @@ void import_points_t::fill_data_arrays(std::vector<double> a_correct_points)
 {
   std::vector<double> x;
   std::vector<double> y;
-  fill_x_y_arrays(x, y, m_rows_selected);
+  fill_x_y_arrays(x, y, m_selected_row, m_selected_col, m_rows_selected);
 
   bool correct_points_are_valid = true;
   for (auto point: a_correct_points) {
@@ -150,3 +150,36 @@ double import_points_t::get_next_data(move_direction_t a_direction)
   }
   return current_x;
 }
+
+int import_points_t::get_rows_count()
+{
+  return m_csv_model->rowCount();
+}
+
+int import_points_t::get_cols_count()
+{
+  return m_csv_model->columnCount();
+}
+
+bool import_points_t::is_rows_selected()
+{
+  return m_rows_selected;
+}
+
+
+void import_points_t::get_data(std::vector<double> a_x, std::vector<double> a_y,
+  int a_data_num)
+{
+  int row_num;
+  int col_num;
+  if (m_rows_selected) {
+    row_num = a_data_num;
+    col_num = m_selected_col;
+  } else {
+    row_num = m_selected_row;
+    col_num = a_data_num;
+  }
+
+  fill_x_y_arrays(a_x, a_y, row_num, col_num, m_rows_selected);
+}
+

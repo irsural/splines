@@ -28,12 +28,15 @@ SOURCES += \
         import_points.cpp \
         import_points_dialog.cpp \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+        spline.cpp
 
 HEADERS += \
         hermit.h \
         import_points.h \
         import_points_dialog.h \
+        linear_interpolation.hpp \
+        linear_interpolation.hpp \
         mainwindow.h \
         spline.h
 
