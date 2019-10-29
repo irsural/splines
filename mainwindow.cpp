@@ -219,6 +219,9 @@ void MainWindow::draw_lines(double a_min, double a_max, double a_step)
   mp_hermite_data->clear();
   mp_linear_data->clear();
 
+  mp_axisX->setTickType(QValueAxis::TickType::TicksFixed);
+  mp_axisY->setTickType(QValueAxis::TickType::TicksFixed);
+
   m_min_y = std::numeric_limits<double>::max();
   m_max_y = std::numeric_limits<double>::min();
 
@@ -271,11 +274,51 @@ void MainWindow::draw_lines(double a_min, double a_max, double a_step)
     drawed = true;
   }
   if (m_auto_scale) {
-    mp_axisY->setRange(m_min_y, m_max_y);
     mp_axisX->setRange(a_min, a_max);
+    mp_axisY->setRange(m_min_y, m_max_y);
+
+    double x_tick_interval = calc_chart_tick_interval(a_min, a_max, 10);
+    mp_axisX->setTickInterval(x_tick_interval);
+    mp_axisX->setTickType(QValueAxis::TickType::TicksDynamic);
+    double y_tick_interval = calc_chart_tick_interval(m_min_y, m_max_y, 10);
+    mp_axisY->setTickInterval(y_tick_interval);
+    mp_axisY->setTickType(QValueAxis::TickType::TicksDynamic);
   }
 }
 
+std::tuple<double, double> get_double_power(double a_val)
+{
+  double value = 0;
+  double power = 0;
+  if (a_val > std::numeric_limits<double>::epsilon()) {
+    power = /*1 + */int(std::floor(std::log10(std::fabs(a_val))));
+    value = a_val * std::pow(10 , -1*power);
+  }
+  return std::make_tuple(value, power);
+}
+
+double MainWindow::calc_chart_tick_interval(double a_min, double a_max,
+  size_t a_ticks_count)
+{
+  std::array<double, 3> nice_numbers{ 1, 2, 5 };
+  double bad_tick_interval = (a_max - a_min) / a_ticks_count;
+
+  auto double_info = get_double_power(bad_tick_interval);
+  double val = std::get<0>(double_info);
+  double power = std::get<1>(double_info);
+
+  double nice = 1;
+  double diff = numeric_limits<double>::max();
+
+  for (auto number: nice_numbers) {
+    double cur_diff = std::abs(number - val);
+    if (diff > cur_diff) {
+      diff = cur_diff;
+      nice = number;
+    }
+  }
+  return nice * pow(10, power);
+}
 
 
 void MainWindow::fill_cubic(vector<double> &a_x, vector<double> &a_y,
@@ -555,5 +598,3 @@ void MainWindow::on_show_all_graps_button_clicked()
 //    draw_line(x, y, linear_series[i]);
 //  }
 }
-
-

@@ -108,6 +108,8 @@ private:
   void calc_splines(vector<double> &a_points);
   void calc_difs();
   void draw_lines(double a_min, double a_max, double a_step);
+  double calc_chart_tick_interval(double a_min, double a_max,
+    size_t a_ticks_count);
 
   void fill_cubic(vector<double>& a_x, vector<double>& a_y, double a_min,
     double a_max, double a_step);
