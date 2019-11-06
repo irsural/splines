@@ -65,8 +65,8 @@ private:
   vector<double> m_correct_points;
   std::map<double,double> m_points;
 
-  QChart* mp_chart;
-  QChartView* mp_chart_view;
+//  QChart* mp_chart;
+//  QChartView* mp_chart_view;
 
   ::tk::spline m_cubic_spline;
   pchip_t<double> m_hermite_spline;
@@ -126,6 +126,7 @@ private:
   void reinit_control_buttons();
 
   void keyPressEvent(QKeyEvent *a_event);
+  void mouseDoubleClickEvent(QMouseEvent *event);
 };
 
 #endif // MAINWINDOW_H

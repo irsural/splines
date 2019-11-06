@@ -14,8 +14,8 @@ MainWindow::MainWindow(QWidget *parent) :
   m_current(),
   m_correct_points { 40, 47, 70, 120, 300, 1000, 1400, 2000 },
   m_points(),
-  mp_chart(new QChart()),
-  mp_chart_view(new QChartView(mp_chart, this)),
+//  mp_chart(new QChart()),
+//  mp_chart_view(new QChartView(mp_chart, this)),
   m_cubic_spline(),
   m_hermite_spline(),
   m_linear_interpolation(),
@@ -66,19 +66,21 @@ MainWindow::~MainWindow()
 
 void MainWindow::create_chart()
 {
-  mp_chart->legend()->setAlignment(Qt::AlignBottom);
   mp_hermite_data->setName("hermite");
   mp_linear_data->setName("linear");
   mp_cubic_data->setName("cubic");
 
-  mp_axisX->setLabelFormat("%g");
-  mp_chart->addAxis(mp_axisX, Qt::AlignBottom);
-  mp_axisY->setLabelFormat("%g");
-  mp_chart->addAxis(mp_axisY, Qt::AlignLeft);
+  QChart* chart = ui->chart_widget->chart();
 
-  mp_chart_view->setRenderHint(QPainter::Antialiasing);
-  mp_chart_view->setRubberBand(QChartView::RectangleRubberBand);
-  ui->chart_layout->addWidget(mp_chart_view);
+  mp_axisX->setLabelFormat("%g");
+  chart->addAxis(mp_axisX, Qt::AlignBottom);
+  mp_axisY->setLabelFormat("%g");
+  chart->addAxis(mp_axisY, Qt::AlignLeft);
+
+  ui->chart_widget->setRenderHint(QPainter::Antialiasing);
+  ui->chart_widget->setRubberBand(QChartView::RectangleRubberBand);
+//  ui->chart_layout->addWidget(mp_chart_view);
+
 
   QHBoxLayout* header = new QHBoxLayout();
   ui->buttons_layout->addLayout(header);
@@ -272,9 +274,9 @@ void MainWindow::draw_lines(double a_min, double a_max, double a_step)
 
   static bool drawed = false;
   if (!drawed) {
-    mp_chart->addSeries(mp_cubic_data);
-    mp_chart->addSeries(mp_hermite_data);
-    mp_chart->addSeries(mp_linear_data);
+    ui->chart_widget->chart()->addSeries(mp_cubic_data);
+    ui->chart_widget->chart()->addSeries(mp_hermite_data);
+    ui->chart_widget->chart()->addSeries(mp_linear_data);
 
     mp_cubic_data->attachAxis(mp_axisX);
     mp_cubic_data->attachAxis(mp_axisY);
@@ -419,7 +421,7 @@ void MainWindow::draw_line(const vector<double>& a_x,
     mp_axisX->setRange(a_x[0], a_x[a_x.size() - 1]);
   }
 
-  mp_chart->addSeries(a_series);
+  ui->chart_widget->chart()->addSeries(a_series);
 
   a_series->attachAxis(mp_axisX);
   a_series->attachAxis(mp_axisY);
@@ -629,8 +631,20 @@ void MainWindow::chart_was_zoomed(qreal a_min, qreal a_max)
   QObject* obj = QObject::sender();
   QValueAxis* zoomed_axis = qobject_cast<QValueAxis*>(obj);
 
+  if (zoomed_axis == mp_axisX) qDebug() << "its X";
+  if (zoomed_axis == mp_axisY) qDebug() << "its Y";
+
   double tick_interval = calc_chart_tick_interval(a_min, a_max,
     ui->spinbox_ticks_count->value());
   zoomed_axis->setTickInterval(tick_interval);
   zoomed_axis->setTickType(QValueAxis::TickType::TicksDynamic);
+}
+
+void MainWindow::mouseDoubleClickEvent(QMouseEvent *a_event)
+{
+  if (ui->chart_layout->geometry().intersects(
+    QRect(a_event->pos(), QSize(1, 1))))
+  {
+    qDebug() << "click hit";
+  }
 }
