@@ -461,7 +461,7 @@ void MainWindow::reinit_control_buttons()
   m_max_x = m_freq[m_freq.size() - 1];
   m_min_y = std::numeric_limits<double>::max();
   m_max_y = std::numeric_limits<double>::min();
-  m_x_step = (m_freq[m_freq.size() - 1] - m_freq[0]) / 400;
+  m_x_step = m_auto_step ? (m_freq[m_freq.size() - 1] - m_freq[0]) / 400 : m_x_step;
   mp_layouts.resize(m_freq.size());
   mp_point_checkboxes.resize(m_freq.size());
   mp_diff_cubic_labels.resize(m_freq.size());
@@ -528,6 +528,10 @@ void MainWindow::on_xmax_spinbox_valueChanged(double a_val)
 
 void MainWindow::on_reset_scale_clicked()
 {
+  //Чтобы сброс проходил быстро
+  mp_axisX->setTickInterval(m_max_x - m_min_x);
+  mp_axisY->setTickInterval(m_max_y - m_min_y);
+
   mp_axisX->setRange(m_min_x, m_max_x);
   mp_axisY->setRange(m_min_y, m_max_y);
   repaint_spline();
@@ -582,13 +586,14 @@ void MainWindow::keyPressEvent(QKeyEvent *a_event)
 {
   import_points_t::move_direction_t move_direction =
     import_points_t::move_direction_t::none;
-  if (a_event->text() == "w") {
+  qDebug() << a_event->nativeScanCode();
+  if (a_event->nativeScanCode() == 17/*w*/) {
     move_direction = import_points_t::move_direction_t::up;
-  } else if (a_event->text() == "s") {
+  } else if (a_event->nativeScanCode() == 31/*s*/) {
     move_direction = import_points_t::move_direction_t::down;
-  } else if (a_event->text() == "a") {
+  } else if (a_event->nativeScanCode() == 30/*a*/) {
     move_direction = import_points_t::move_direction_t::left;
-  } else if (a_event->text() == "d") {
+  } else if (a_event->nativeScanCode() == 32/*d*/) {
     move_direction = import_points_t::move_direction_t::right;
   }
   if (move_direction != import_points_t::move_direction_t::none) {
