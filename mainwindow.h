@@ -13,6 +13,7 @@
 
 #include <limits>
 #include <cmath>
+#include <stack>
 
 #include "spline.h"
 #include "hermit.h"
@@ -104,6 +105,10 @@ private:
 
   bool m_draw_relative_points;
 
+  QRectF m_start_zoom;
+  std::stack<QRectF> m_zoom_stack;
+  bool m_save_zoom;
+
   import_points_t* m_points_importer;
 
   void create_chart();
@@ -127,6 +132,7 @@ private:
 
   void keyPressEvent(QKeyEvent *a_event);
   void mouseDoubleClickEvent(QMouseEvent *event);
+  void set_new_zoom_start();
 };
 
 #endif // MAINWINDOW_H

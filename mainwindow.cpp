@@ -44,6 +44,9 @@ MainWindow::MainWindow(QWidget *parent) :
   m_limit_color(QPalette::Window, QColor(0xffe9d1)),
   m_default_color(),
   m_draw_relative_points(false),
+  m_start_zoom(),
+  m_zoom_stack(),
+  m_save_zoom(false),
   m_points_importer(new import_points_t(this))
 {
   ui->setupUi(this);
@@ -79,8 +82,6 @@ void MainWindow::create_chart()
 
   ui->chart_widget->setRenderHint(QPainter::Antialiasing);
   ui->chart_widget->setRubberBand(QChartView::RectangleRubberBand);
-//  ui->chart_layout->addWidget(mp_chart_view);
-
 
   QHBoxLayout* header = new QHBoxLayout();
   ui->buttons_layout->addLayout(header);
@@ -289,6 +290,7 @@ void MainWindow::draw_lines(double a_min, double a_max, double a_step)
   if (m_auto_scale) {
     mp_axisX->setRange(a_min, a_max);
     mp_axisY->setRange(m_min_y, m_max_y);
+    set_new_zoom_start();
   }
 
   double x_tick_interval = calc_chart_tick_interval(mp_axisX->min(),
@@ -306,7 +308,7 @@ std::tuple<double, double> get_double_power(double a_val)
   double value = 0;
   double power = 0;
   if (a_val > std::numeric_limits<double>::epsilon()) {
-    power = /*1 + */int(std::floor(std::log10(std::fabs(a_val))));
+    power = int(std::floor(std::log10(std::fabs(a_val))));
     value = a_val * std::pow(10 , -1*power);
   }
   return std::make_tuple(value, power);
@@ -487,6 +489,8 @@ void MainWindow::update_points(vector<double> a_x, vector<double> a_y,
   reinit_control_buttons();
   repaint_spline();
 
+//  set_new_zoom_start();
+
   m_points_importer->get_next_data(import_points_t::move_direction_t::none);
 }
 
@@ -501,8 +505,10 @@ void MainWindow::repaint_spline()
 //      draw_line(x, y, mp_linear_data);
 //    }
 
+    m_save_zoom = false;
     calc_splines(m_correct_points);
     draw_lines(m_min_x, m_max_x, m_x_step);
+    m_save_zoom = true;
 
 //    if (m_draw_cubic) {
 //      fill_cubic(x, y, m_min_x, m_max_x, m_x_step);
@@ -537,6 +543,7 @@ void MainWindow::on_reset_scale_clicked()
   mp_axisX->setRange(m_min_x, m_max_x);
   mp_axisY->setRange(m_min_y, m_max_y);
   repaint_spline();
+  set_new_zoom_start();
 }
 
 void MainWindow::on_open_file_button_clicked()
@@ -588,7 +595,7 @@ void MainWindow::keyPressEvent(QKeyEvent *a_event)
 {
   import_points_t::move_direction_t move_direction =
     import_points_t::move_direction_t::none;
-  qDebug() << a_event->nativeScanCode();
+
   if (a_event->nativeScanCode() == 17/*w*/) {
     move_direction = import_points_t::move_direction_t::up;
   } else if (a_event->nativeScanCode() == 31/*s*/) {
@@ -631,13 +638,18 @@ void MainWindow::chart_was_zoomed(qreal a_min, qreal a_max)
   QObject* obj = QObject::sender();
   QValueAxis* zoomed_axis = qobject_cast<QValueAxis*>(obj);
 
-  if (zoomed_axis == mp_axisX) qDebug() << "its X";
-  if (zoomed_axis == mp_axisY) qDebug() << "its Y";
-
   double tick_interval = calc_chart_tick_interval(a_min, a_max,
     ui->spinbox_ticks_count->value());
   zoomed_axis->setTickInterval(tick_interval);
   zoomed_axis->setTickType(QValueAxis::TickType::TicksDynamic);
+
+  if (zoomed_axis == mp_axisY) {
+    if (m_save_zoom) {
+      //Êמככב‎ך ןמ Y גסודהא גûחûגאועסÿ ןמסכו ךמככב‎ךא ןמ X
+      m_zoom_stack.push(QRectF(mp_axisX->min(), mp_axisX->max(),
+        mp_axisY->min(), mp_axisY->max()));
+    }
+  }
 }
 
 void MainWindow::mouseDoubleClickEvent(QMouseEvent *a_event)
@@ -645,6 +657,29 @@ void MainWindow::mouseDoubleClickEvent(QMouseEvent *a_event)
   if (ui->chart_layout->geometry().intersects(
     QRect(a_event->pos(), QSize(1, 1))))
   {
-    qDebug() << "click hit";
+    if (!m_zoom_stack.empty()) {
+      if (m_zoom_stack.top() != m_start_zoom) {
+        m_zoom_stack.pop();
+
+        const QRectF& field = m_zoom_stack.top();
+
+        bool prev_auto_scale = m_auto_scale;
+        m_auto_scale = false;
+        m_save_zoom = false;
+        mp_axisX->setRange(field.left(), field.top());
+        mp_axisY->setRange(field.width(), field.height());
+        repaint_spline();
+        m_save_zoom = true;
+        m_auto_scale = prev_auto_scale;
+      }
+    }
   }
+}
+
+void MainWindow::set_new_zoom_start()
+{
+  m_start_zoom = {m_min_x, m_max_x, m_min_y, m_max_y};
+  while(!m_zoom_stack.empty()) m_zoom_stack.pop();
+  m_zoom_stack.push(m_start_zoom);
+  m_save_zoom = true;
 }
