@@ -628,9 +628,10 @@ void MainWindow::on_show_all_graps_button_clicked()
 
 void MainWindow::on_button_apply_ticks_count_clicked()
 {
+  bool prev_auto_scale = m_auto_scale;
   m_auto_scale = false;
   repaint_spline();
-  m_auto_scale = true;
+  m_auto_scale = prev_auto_scale;
 }
 
 void MainWindow::chart_was_zoomed(qreal a_min, qreal a_max)
