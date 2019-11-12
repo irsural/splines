@@ -66,6 +66,10 @@ private:
     arrays_not_same_size
   };
 
+  struct graph_info {
+
+  };
+
   Ui::MainWindow *ui;
 
   vector<double> m_x;

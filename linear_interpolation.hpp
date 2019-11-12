@@ -1,3 +1,5 @@
+#include "interpolation_base.h"
+
 #include <iostream>
 #include <vector>
 #include <map>
@@ -20,16 +22,16 @@ void out_map(T& a_map)
 }
 
 template <class T>
-class line_interp_t
+class line_interp_t : interpolation_base_t
 {
 public:
 	line_interp_t();
 	void add(T a_x, T a_y);
 	void clear();
-  void set_points(const T* ap_x_carray, const T* ap_y_carray, size_t a_size);
+  virtual void set_points(const T* ap_x_carray, const T* ap_y_carray, size_t a_size) override;
 	void prepare();
 	void prepare_inv();
-  T operator()(T x);
+  virtual T operator()(T x) override;
 	T calc_inv(T x);
 
 private:

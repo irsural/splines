@@ -35,6 +35,7 @@ HEADERS += \
         hermit.h \
         import_points.h \
         import_points_dialog.h \
+        interpolation_base.h \
         linear_interpolation.hpp \
         linear_interpolation.hpp \
         mainwindow.h \

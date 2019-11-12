@@ -1,6 +1,8 @@
 #ifndef HERMIT_H
 #define HERMIT_H
 
+#include "interpolation_base.h"
+
 #include <vector>
 #include <cassert>
 using namespace std;
@@ -8,14 +10,14 @@ using namespace std;
 
 //Piecewise Cubic Hermite Interpolating Polynomial
 template <class T>
-class pchip_t
+class pchip_t : interpolation_base_t
 {
 public:
     ~pchip_t();
     pchip_t();
 
-    void set_points(const T *a_x, const T *a_y, size_t a_length);
-    T operator()(T a_x);
+    virtual void set_points(const T *a_x, const T *a_y, size_t a_length) override;
+    virtual T operator()(T a_x) override;
 private:
     size_t m_nodes_count;
     vector<T> m_x;

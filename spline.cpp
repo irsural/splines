@@ -1,4 +1,5 @@
 #include "spline.h"
+#include <iterator>
 
 namespace tk {
 
@@ -164,29 +165,33 @@ void spline::set_boundary(spline::bd_type left, double left_value,
 }
 
 
-void spline::set_points(const std::vector<double>& x,
-                        const std::vector<double>& y, bool cubic_spline)
+void spline::set_points(const double *a_x, const double *a_y, size_t a_size)
 {
-    assert(x.size()==y.size());
-    assert(x.size()>1);
-    m_x=x;
-    m_y=y;
-    int n=static_cast<int>(x.size());
+    assert(a_size > 1);
+    m_x.clear();
+    m_x.reserve(a_size);
+    m_y.clear();
+    m_y.reserve(a_size);
+
+    std::copy(a_x, a_x + a_size, std::back_inserter(m_x));
+    std::copy(a_y, a_y + a_size, std::back_inserter(m_y));
+
+    int n=static_cast<int>(m_x.size());
     // TODO: maybe sort x and y, rather than returning an error
     for(int i=0; i<n-1; i++) {
         assert(m_x[i]<m_x[i+1]);
     }
-
+    bool cubic_spline = true;
     if(cubic_spline==true) { // cubic spline interpolation
         // setting up the matrix and right hand side of the equation system
         // for the parameters b[]
         band_matrix A(n,1,1);
         std::vector<double>  rhs(n);
         for(int i=1; i<n-1; i++) {
-            A(i,i-1)=1.0/3.0*(x[i]-x[i-1]);
-            A(i,i)=2.0/3.0*(x[i+1]-x[i-1]);
-            A(i,i+1)=1.0/3.0*(x[i+1]-x[i]);
-            rhs[i]=(y[i+1]-y[i])/(x[i+1]-x[i]) - (y[i]-y[i-1])/(x[i]-x[i-1]);
+            A(i,i-1)=1.0/3.0*(a_x[i]-a_x[i-1]);
+            A(i,i)=2.0/3.0*(a_x[i+1]-a_x[i-1]);
+            A(i,i+1)=1.0/3.0*(a_x[i+1]-a_x[i]);
+            rhs[i]=(a_y[i+1]-a_y[i])/(a_x[i+1]-a_x[i]) - (a_y[i]-a_y[i-1])/(a_x[i]-a_x[i-1]);
         }
         // boundary conditions
         if(m_left == spline::second_deriv) {
@@ -197,9 +202,9 @@ void spline::set_points(const std::vector<double>& x,
         } else if(m_left == spline::first_deriv) {
             // c[0] = f', needs to be re-expressed in terms of b:
             // (2b[0]+b[1])(x[1]-x[0]) = 3 ((y[1]-y[0])/(x[1]-x[0]) - f')
-            A(0,0)=2.0*(x[1]-x[0]);
-            A(0,1)=1.0*(x[1]-x[0]);
-            rhs[0]=3.0*((y[1]-y[0])/(x[1]-x[0])-m_left_value);
+            A(0,0)=2.0*(a_x[1]-a_x[0]);
+            A(0,1)=1.0*(a_x[1]-a_x[0]);
+            rhs[0]=3.0*((a_y[1]-a_y[0])/(a_x[1]-a_x[0])-m_left_value);
         } else {
             assert(false);
         }
@@ -212,9 +217,9 @@ void spline::set_points(const std::vector<double>& x,
             // c[n-1] = f', needs to be re-expressed in terms of b:
             // (b[n-2]+2b[n-1])(x[n-1]-x[n-2])
             // = 3 (f' - (y[n-1]-y[n-2])/(x[n-1]-x[n-2]))
-            A(n-1,n-1)=2.0*(x[n-1]-x[n-2]);
-            A(n-1,n-2)=1.0*(x[n-1]-x[n-2]);
-            rhs[n-1]=3.0*(m_right_value-(y[n-1]-y[n-2])/(x[n-1]-x[n-2]));
+            A(n-1,n-1)=2.0*(a_x[n-1]-a_x[n-2]);
+            A(n-1,n-2)=1.0*(a_x[n-1]-a_x[n-2]);
+            rhs[n-1]=3.0*(m_right_value-(a_y[n-1]-a_y[n-2])/(a_x[n-1]-a_x[n-2]));
         } else {
             assert(false);
         }
@@ -226,9 +231,9 @@ void spline::set_points(const std::vector<double>& x,
         m_a.resize(n);
         m_c.resize(n);
         for(int i=0; i<n-1; i++) {
-            m_a[i]=1.0/3.0*(m_b[i+1]-m_b[i])/(x[i+1]-x[i]);
-            m_c[i]=(y[i+1]-y[i])/(x[i+1]-x[i])
-                   - 1.0/3.0*(2.0*m_b[i]+m_b[i+1])*(x[i+1]-x[i]);
+            m_a[i]=1.0/3.0*(m_b[i+1]-m_b[i])/(a_x[i+1]-a_x[i]);
+            m_c[i]=(a_y[i+1]-a_y[i])/(a_x[i+1]-a_x[i])
+                   - 1.0/3.0*(2.0*m_b[i]+m_b[i+1])*(a_x[i+1]-a_x[i]);
         }
     } else { // linear interpolation
         m_a.resize(n);
@@ -247,7 +252,7 @@ void spline::set_points(const std::vector<double>& x,
 
     // for the right extrapolation coefficients
     // f_{n-1}(x) = b*(x-x_{n-1})^2 + c*(x-x_{n-1}) + y_{n-1}
-    double h=x[n-1]-x[n-2];
+    double h=a_x[n-1]-a_x[n-2];
     // m_b[n-1] is determined by the boundary condition
     m_a[n-1]=0.0;
     m_c[n-1]=3.0*m_a[n-2]*h*h+2.0*m_b[n-2]*h+m_c[n-2];   // = f'_{n-2}(x_{n-1})
@@ -255,7 +260,7 @@ void spline::set_points(const std::vector<double>& x,
         m_b[n-1]=0.0;
 }
 
-double spline::operator() (double x) const
+double spline::operator() (double x)
 {
     size_t n=m_x.size();
     // find the closest point m_x[idx] < x, idx=0 even if x<m_x[0]

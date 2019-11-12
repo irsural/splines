@@ -56,8 +56,6 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(m_points_importer, &import_points_t::points_are_ready,
     this, &MainWindow::update_points);
 
-  m_cubic_spline.set_boundary(tk::spline::second_deriv, 0,
-    tk::spline::second_deriv, 0, false);
 }
 
 MainWindow::~MainWindow()
@@ -78,6 +76,17 @@ void MainWindow::create_chart()
   chart->addAxis(mp_axisX, Qt::AlignBottom);
   chart->addAxis(mp_axisY, Qt::AlignLeft);
 
+  ui->chart_widget->chart()->addSeries(mp_cubic_data);
+  ui->chart_widget->chart()->addSeries(mp_hermite_data);
+  ui->chart_widget->chart()->addSeries(mp_linear_data);
+
+  mp_cubic_data->attachAxis(mp_axisX);
+  mp_cubic_data->attachAxis(mp_axisY);
+  mp_hermite_data->attachAxis(mp_axisX);
+  mp_hermite_data->attachAxis(mp_axisY);
+  mp_linear_data->attachAxis(mp_axisX);
+  mp_linear_data->attachAxis(mp_axisY);
+
   ui->chart_widget->setRenderHint(QPainter::Antialiasing);
   ui->chart_widget->setRubberBand(QChartView::RectangleRubberBand);
 
@@ -94,6 +103,8 @@ void MainWindow::create_chart()
 
   connect(mp_axisX, &QValueAxis::rangeChanged, this, &MainWindow::chart_was_zoomed);
   connect(mp_axisY, &QValueAxis::rangeChanged, this, &MainWindow::chart_was_zoomed);
+
+
 }
 
 void MainWindow::create_control(const vector<double>& a_x)
@@ -148,7 +159,7 @@ void MainWindow::calc_splines(const vector<double> &a_correct_points)
     }
   }
 
-  m_cubic_spline.set_points(a_correct_points, correct_values);
+  m_cubic_spline.set_points(a_correct_points.data(), correct_values.data(), a_correct_points.size());
   m_hermite_spline.set_points(a_correct_points.data(), correct_values.data(), a_correct_points.size());
   m_linear_interpolation.set_points(a_correct_points.data(), correct_values.data(), a_correct_points.size());
 
@@ -173,16 +184,19 @@ void MainWindow::calc_difs()
 
     double cubic_value = m_cubic_spline(a_pair.first);
     double cubic_diff = get_diff(real_value, cubic_value);
+    worst_cubic.add(abs(cubic_diff));
     mp_diff_cubic_labels[label_ind]->setText(QString::number(cubic_diff));
     mp_diff_cubic_labels[label_ind]->setPalette(m_default_color);
 
     double hermite_value = m_hermite_spline(a_pair.first);
     double hermite_diff = get_diff(real_value, hermite_value);
+    worst_hermite.add(abs(hermite_diff));
     mp_diff_hermite_labels[label_ind]->setText(QString::number(hermite_diff));
     mp_diff_hermite_labels[label_ind]->setPalette(m_default_color);
 
     double linear_value = m_linear_interpolation(a_pair.first);
     double linear_diff = get_diff(real_value, linear_value);
+    worst_linear.add(abs(linear_diff));
     mp_diff_linear_labels[label_ind]->setText(QString::number(linear_diff));
     mp_diff_linear_labels[label_ind]->setPalette(m_default_color);
 
@@ -202,10 +216,6 @@ void MainWindow::calc_difs()
     if (abs(linear_diff) > ui->spinbox_mark_limit->value()) {
       mp_diff_linear_labels[label_ind]->setPalette(m_limit_color);
     }
-
-    worst_cubic.add(abs(cubic_diff));
-    worst_hermite.add(abs(hermite_diff));
-    worst_linear.add(abs(linear_diff));
 
     label_ind++;
   }
@@ -260,20 +270,6 @@ void MainWindow::draw_lines(double a_min, double a_max, double a_step)
     }
   }
 
-  static bool drawed = false;
-  if (!drawed) {
-    ui->chart_widget->chart()->addSeries(mp_cubic_data);
-    ui->chart_widget->chart()->addSeries(mp_hermite_data);
-    ui->chart_widget->chart()->addSeries(mp_linear_data);
-
-    mp_cubic_data->attachAxis(mp_axisX);
-    mp_cubic_data->attachAxis(mp_axisY);
-    mp_hermite_data->attachAxis(mp_axisX);
-    mp_hermite_data->attachAxis(mp_axisY);
-    mp_linear_data->attachAxis(mp_axisX);
-    mp_linear_data->attachAxis(mp_axisY);
-    drawed = true;
-  }
   if (m_auto_scale) {
     mp_axisX->setRange(a_min, a_max);
     mp_axisY->setRange(m_min_y, m_max_y);
