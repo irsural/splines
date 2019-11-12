@@ -78,7 +78,19 @@ void import_points_t::fill_x_y_arrays(std::vector<double>& a_x,
     default: {
     } break;
   }
+}
 
+bool import_points_t::are_correct_points_valid(const std::vector<double> &a_correct_points, const std::vector<double> &a_x)
+{
+  if (a_correct_points.size() < 2) {
+    return false;
+  }
+  for (auto point: a_correct_points) {
+    if (std::find(a_x.begin(), a_x.end(), point) == a_x.end()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void import_points_t::fill_data_arrays(std::vector<double> a_correct_points)
@@ -87,16 +99,9 @@ void import_points_t::fill_data_arrays(std::vector<double> a_correct_points)
   std::vector<double> y;
   fill_x_y_arrays(x, y);
 
-  bool correct_points_are_valid = true;
-  for (auto point: a_correct_points) {
-    if (std::find(x.begin(), x.end(), point) == x.end()) {
-      correct_points_are_valid = false;
-      break;
-    }
-  }
-  m_correct_points = std::move(a_correct_points);
-
-  if (m_correct_points.size() < 2 || !correct_points_are_valid) {
+  if (are_correct_points_valid(a_correct_points, x)) {
+    m_correct_points = std::move(a_correct_points);
+  } else {
     m_correct_points = { x.front(), x.back() };
   }
   emit points_are_ready(x, y);
@@ -130,7 +135,6 @@ void import_points_t::set_next_data(move_direction_t a_direction)
           m_selected_col--;
         }
       } break;
-      default: break;
     }
     fill_data_arrays(m_correct_points);
   }

@@ -14,7 +14,8 @@ public:
   explicit import_points_t(std::vector<double>& a_correct_points, QObject *parent = nullptr);
 
   void create_import_points_dialog(QWidget *a_parent);
-  void set_correct_points(const std::vector<double>& a_correct_points);
+  bool are_correct_points_valid(const std::vector<double> &a_correct_points, const std::vector<double> &a_x);
+//  void set_correct_points(const std::vector<double>& a_correct_points);
   void set_next_data(move_direction_t a_direction);
   double get_x();
 
