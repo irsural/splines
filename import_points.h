@@ -17,7 +17,7 @@ public:
   bool are_correct_points_valid(const std::vector<double> &a_correct_points, const std::vector<double> &a_x);
 //  void set_correct_points(const std::vector<double>& a_correct_points);
   void set_next_data(move_direction_t a_direction);
-  double get_x();
+  QString get_x();
 
 signals:
   void points_are_ready(std::vector<double> &a_x, std::vector<double> &a_y);

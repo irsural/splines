@@ -53,7 +53,7 @@ private slots:
   void on_checkBox_6_stateChanged(int a_state);
   void update_points(vector<double> &a_x, vector<double> &a_y);
   void on_show_all_graps_button_clicked();
-  void on_button_apply_ticks_count_clicked();
+  void on_button_apply_clicked();
 
   void chart_was_zoomed(qreal min, qreal max);
 
@@ -108,6 +108,7 @@ private:
   QPalette m_default_color;
 
   bool m_draw_relative_points;
+  size_t m_tick_interval_count;
 
   QRectF m_start_zoom;
   std::stack<QRectF> m_zoom_stack;

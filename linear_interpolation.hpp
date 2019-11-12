@@ -29,7 +29,7 @@ public:
   void set_points(const T* ap_x_carray, const T* ap_y_carray, size_t a_size);
 	void prepare();
 	void prepare_inv();
-	T calc(T x);
+  T operator()(T x);
 	T calc_inv(T x);
 
 private:
@@ -199,7 +199,7 @@ T line_interp_t<T>::calc_helper(T x, point_list_type& a_point_list)
 }
 
 template <class T>
-T line_interp_t<T>::calc(T x)
+T line_interp_t<T>::operator()(T x)
 {
 	if (m_point_list.size() < point_list_size_limit) {
 		return 0;

@@ -140,14 +140,13 @@ void import_points_t::set_next_data(move_direction_t a_direction)
   }
 }
 
-double import_points_t::get_x()
+QString import_points_t::get_x()
 {
-  QString current_x_str;
+  QString current_x_str = "";
   switch (m_selected) {
     case import_points_dialog_t::select_t::none: {
       //Точки еще не были импортированы
-      return 0;
-    };
+    } break;
     case import_points_dialog_t::select_t::rows: {
       current_x_str = m_csv_model->item(m_selected_row, 0)->text();
     } break;
@@ -155,6 +154,6 @@ double import_points_t::get_x()
       current_x_str = m_csv_model->item(0, m_selected_col)->text();
     } break;
   }
-  return current_x_str.replace(",",".").toDouble();
+  return current_x_str;
 }
 

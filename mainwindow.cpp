@@ -42,6 +42,7 @@ MainWindow::MainWindow(QWidget *parent) :
   m_limit_color(QPalette::Window, QColor(0xffe9d1)),
   m_default_color(),
   m_draw_relative_points(false),
+  m_tick_interval_count(10),
   m_start_zoom(),
   m_zoom_stack(),
   m_save_zoom(false),
@@ -172,7 +173,7 @@ void MainWindow::calc_difs()
     double hermite_value = m_hermite_spline(a_pair.first);
     double hermite_diff = (real_value - hermite_value) / hermite_value * 100;
 
-    double linear_value = m_linear_interpolation.calc(a_pair.first);
+    double linear_value = m_linear_interpolation(a_pair.first);
     double linear_diff = (real_value - linear_value) / linear_value * 100;
 
     mp_diff_cubic_labels[label_ind]->setText(QString::number(cubic_diff));
@@ -284,12 +285,11 @@ void MainWindow::draw_lines(double a_min, double a_max, double a_step)
     set_new_zoom_start();
   }
 
-  double x_tick_interval = calc_chart_tick_interval(mp_axisX->min(),
-    mp_axisX->max(), ui->spinbox_ticks_count->value());
+  double x_tick_interval = calc_chart_tick_interval(mp_axisX->min(), mp_axisX->max(), m_tick_interval_count);
   mp_axisX->setTickInterval(x_tick_interval);
   mp_axisX->setTickType(QValueAxis::TickType::TicksDynamic);
-  double y_tick_interval = calc_chart_tick_interval(mp_axisY->min(),
-    mp_axisY->max(), ui->spinbox_ticks_count->value());
+
+  double y_tick_interval = calc_chart_tick_interval(mp_axisY->min(), mp_axisY->max(), m_tick_interval_count);
   mp_axisY->setTickInterval(y_tick_interval);
   mp_axisY->setTickType(QValueAxis::TickType::TicksDynamic);
 }
@@ -311,9 +311,7 @@ double MainWindow::calc_chart_tick_interval(double a_min, double a_max,
   std::array<double, 3> nice_numbers{ 1, 2, 5 };
   double bad_tick_interval = (a_max - a_min) / a_ticks_count;
 
-  auto double_info = get_double_power(bad_tick_interval);
-  double val = std::get<0>(double_info);
-  double power = std::get<1>(double_info);
+  auto [val, power] = get_double_power(bad_tick_interval);
 
   double nice = 1;
   double diff = numeric_limits<double>::max();
@@ -500,8 +498,7 @@ void MainWindow::update_points(vector<double> &a_x, vector<double> &a_y)
       reinit_control_buttons();
       repaint_spline();
 
-      double current_x = m_points_importer->get_x();
-      ui->current_x_label->setText(QString::number(current_x));
+      ui->current_x_label->setText(m_points_importer->get_x());
     } break;
     case input_data_error_t::no_data: {
       QMessageBox::critical(this, "Error", "X or Y array is empty");
@@ -614,7 +611,7 @@ void MainWindow::on_show_all_graps_button_clicked()
 {
 }
 
-void MainWindow::on_button_apply_ticks_count_clicked()
+void MainWindow::on_button_apply_clicked()
 {
   bool prev_auto_scale = m_auto_scale;
   m_auto_scale = false;
@@ -627,8 +624,7 @@ void MainWindow::chart_was_zoomed(qreal a_min, qreal a_max)
   QObject* obj = QObject::sender();
   QValueAxis* zoomed_axis = qobject_cast<QValueAxis*>(obj);
 
-  double tick_interval = calc_chart_tick_interval(a_min, a_max,
-    ui->spinbox_ticks_count->value());
+  double tick_interval = calc_chart_tick_interval(a_min, a_max, m_tick_interval_count);
   zoomed_axis->setTickInterval(tick_interval);
   zoomed_axis->setTickType(QValueAxis::TickType::TicksDynamic);
 
