@@ -4,13 +4,13 @@
 
 import_points_t::import_points_t(QObject *parent) :
   QObject(parent),
-  m_last_file_name("C:\\"),
+  m_last_file_name(""),
   m_correct_points(),
   m_csv_model(new QStandardItemModel(this)),
+  mp_import_dialog(),
+  m_selected(import_points_dialog_t::select_t::none),
   m_selected_row(0),
-  m_selected_col(0),
-  m_rows_selected(false),
-  mp_import_dialog()
+  m_selected_col(0)
 {
 
 }
@@ -37,7 +37,7 @@ void import_points_t::set_correct_points(const std::vector<double>& a_correct_po
   m_correct_points = a_correct_points;
 }
 
-void import_points_t::update_filename(QString a_filename)
+void import_points_t::update_filename(const QString& a_filename)
 {
   m_last_file_name = a_filename;
 }
@@ -45,44 +45,56 @@ void import_points_t::update_filename(QString a_filename)
 void import_points_t::set_new_row(int a_row)
 {
   m_selected_row = a_row;
-  m_rows_selected = true;
+  m_selected = import_points_dialog_t::select_t::rows;
 }
 
 void import_points_t::set_new_col(int a_col)
 {
   m_selected_col = a_col;
-  m_rows_selected = false;
+  m_selected = import_points_dialog_t::select_t::cols;
 }
 
 void import_points_t::fill_x_y_arrays(std::vector<double>& a_x,
-  std::vector<double>& a_y, int a_row, int a_col, bool a_rows_selected)
+  std::vector<double>& a_y)
 {
-  if (a_rows_selected) {
-    //Первый столбик - массив Y
-    for(int i = 1; i < m_csv_model->columnCount(); i++) {
-      QString x_str = m_csv_model->item(0, i)->text();
-      a_x.push_back(x_str.replace(",", ".").toDouble());
+  switch (m_selected) {
+    case import_points_dialog_t::select_t::rows: {
+      a_x.reserve(static_cast<size_t>(m_csv_model->columnCount() - 1));
+      a_y.reserve(static_cast<size_t>(m_csv_model->columnCount() - 1));
 
-      QString y_str = m_csv_model->item(a_row, i)->text();
-      a_y.push_back(y_str.replace(",", ".").toDouble());
-    }
-  } else {
-    //Первая строка - массив X
-    for(int i = 1; i < m_csv_model->rowCount(); i++) {
-      QString x_str = m_csv_model->item(i, 0)->text();
-      a_x.push_back(x_str.replace(",", ".").toDouble());
+      //Первый столбик - массив Y
+      for(int i = 1; i < m_csv_model->columnCount(); i++) {
+        QString x_str = m_csv_model->item(0, i)->text();
+        a_x.push_back(x_str.replace(",", ".").toDouble());
 
-      QString y_str = m_csv_model->item(i, a_col)->text();
-      a_y.push_back(y_str.replace(",", ".").toDouble());
-    }
+        QString y_str = m_csv_model->item(m_selected_row, i)->text();
+        a_y.push_back(y_str.replace(",", ".").toDouble());
+      }
+    } break;
+    case import_points_dialog_t::select_t::cols: {
+      a_x.reserve(static_cast<size_t>(m_csv_model->rowCount() - 1));
+      a_y.reserve(static_cast<size_t>(m_csv_model->rowCount() - 1));
+
+      //Первая строка - массив X
+      for(int i = 1; i < m_csv_model->rowCount(); i++) {
+        QString x_str = m_csv_model->item(i, 0)->text();
+        a_x.push_back(x_str.replace(",", ".").toDouble());
+
+        QString y_str = m_csv_model->item(i, m_selected_col)->text();
+        a_y.push_back(y_str.replace(",", ".").toDouble());
+      }
+    } break;
+    default: {
+    } break;
   }
+
 }
 
 void import_points_t::fill_data_arrays(std::vector<double> a_correct_points)
 {
   std::vector<double> x;
   std::vector<double> y;
-  fill_x_y_arrays(x, y, m_selected_row, m_selected_col, m_rows_selected);
+  fill_x_y_arrays(x, y);
 
   bool correct_points_are_valid = true;
   for (auto point: a_correct_points) {
@@ -91,39 +103,46 @@ void import_points_t::fill_data_arrays(std::vector<double> a_correct_points)
       break;
     }
   }
+  m_correct_points = std::move(a_correct_points);
 
-  if (a_correct_points.size() < 2 || !correct_points_are_valid) {
-    a_correct_points.clear();
-    a_correct_points.push_back(x[0]);
-    a_correct_points.push_back(x[x.size() - 1]);
+  if (m_correct_points.size() < 2 || !correct_points_are_valid) {
+    m_correct_points = { x.front(), x.back() };
   }
-  m_correct_points = a_correct_points;
 
   emit points_are_ready(x, y, m_correct_points);
 }
 
 double import_points_t::get_next_data(move_direction_t a_direction)
 {
-  if (!m_selected_col && !m_selected_row) {
-    return 0;
-  }
+  double current_x = 0;
 
-  QString current_x_str = m_rows_selected ? m_csv_model->item(
-    m_selected_row, 0)->text() : m_csv_model->item(0, m_selected_col)->text();
-  double current_x = current_x_str.replace(",",".").toDouble();
+  switch (m_selected) {
+    case import_points_dialog_t::select_t::none: {
+      //Точки еще не были импортированы
+      return current_x;
+    } break;
+    case import_points_dialog_t::select_t::rows: {
+      //Для вызова с a_direction == none
+      QString current_x_str = m_csv_model->item(m_selected_row, 0)->text();
+      current_x = current_x_str.replace(",",".").toDouble();
+    } break;
+    case import_points_dialog_t::select_t::cols: {
+      QString current_x_str = m_csv_model->item(0, m_selected_col)->text();
+      current_x = current_x_str.replace(",",".").toDouble();
+    } break;
+  }
 
   switch (a_direction) {
     case move_direction_t::up: {
-      m_rows_selected = true;
+      m_selected = import_points_dialog_t::select_t::rows;
       if (m_selected_row > 1) {
         m_selected_row--;
         fill_data_arrays(m_correct_points);
         current_x = m_csv_model->item(m_selected_row, 0)->text().replace(",",".").toDouble();
       }
     } break;
-
     case move_direction_t::down: {
-      m_rows_selected = true;
+      m_selected = import_points_dialog_t::select_t::rows;
       if (m_selected_row < m_csv_model->rowCount() - 1) {
         m_selected_row++;
         fill_data_arrays(m_correct_points);
@@ -131,7 +150,7 @@ double import_points_t::get_next_data(move_direction_t a_direction)
       }
     } break;
     case move_direction_t::right: {
-      m_rows_selected = false;
+      m_selected = import_points_dialog_t::select_t::cols;
       if (m_selected_col < m_csv_model->columnCount() - 1) {
         m_selected_col++;
         fill_data_arrays(m_correct_points);
@@ -139,7 +158,7 @@ double import_points_t::get_next_data(move_direction_t a_direction)
       }
     } break;
     case move_direction_t::left: {
-      m_rows_selected = false;
+      m_selected = import_points_dialog_t::select_t::cols;
       if (m_selected_col > 1) {
         m_selected_col--;
         fill_data_arrays(m_correct_points);
@@ -149,37 +168,5 @@ double import_points_t::get_next_data(move_direction_t a_direction)
     default: break;
   }
   return current_x;
-}
-
-int import_points_t::get_rows_count()
-{
-  return m_csv_model->rowCount();
-}
-
-int import_points_t::get_cols_count()
-{
-  return m_csv_model->columnCount();
-}
-
-bool import_points_t::is_rows_selected()
-{
-  return m_rows_selected;
-}
-
-
-void import_points_t::get_data(std::vector<double> a_x, std::vector<double> a_y,
-  int a_data_num)
-{
-  int row_num;
-  int col_num;
-  if (m_rows_selected) {
-    row_num = a_data_num;
-    col_num = m_selected_col;
-  } else {
-    row_num = m_selected_row;
-    col_num = a_data_num;
-  }
-
-  fill_x_y_arrays(a_x, a_y, row_num, col_num, m_rows_selected);
 }
 

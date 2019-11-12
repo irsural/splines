@@ -27,7 +27,7 @@ void band_matrix::resize(int dim, int n_u, int n_l)
 int band_matrix::dim() const
 {
     if(m_upper.size()>0) {
-        return m_upper[0].size();
+        return static_cast<int>(m_upper[0].size());
     } else {
         return 0;
     }
@@ -104,7 +104,7 @@ void band_matrix::lu_decompose()
 // solves Ly=b
 std::vector<double> band_matrix::l_solve(const std::vector<double>& b) const
 {
-    assert( this->dim()==(int)b.size() );
+    assert( this->dim()==static_cast<int>(b.size()));
     std::vector<double> x(this->dim());
     int j_start;
     double sum;
@@ -119,7 +119,7 @@ std::vector<double> band_matrix::l_solve(const std::vector<double>& b) const
 // solves Rx=y
 std::vector<double> band_matrix::r_solve(const std::vector<double>& b) const
 {
-    assert( this->dim()==(int)b.size() );
+    assert( this->dim()==static_cast<int>(b.size()));
     std::vector<double> x(this->dim());
     int j_stop;
     double sum;
@@ -135,7 +135,7 @@ std::vector<double> band_matrix::r_solve(const std::vector<double>& b) const
 std::vector<double> band_matrix::lu_solve(const std::vector<double>& b,
         bool is_lu_decomposed)
 {
-    assert( this->dim()==(int)b.size() );
+    assert( this->dim()==static_cast<int>(b.size()));
     std::vector<double>  x,y;
     if(is_lu_decomposed==false) {
         this->lu_decompose();
@@ -171,7 +171,7 @@ void spline::set_points(const std::vector<double>& x,
     assert(x.size()>1);
     m_x=x;
     m_y=y;
-    int   n=x.size();
+    int n=static_cast<int>(x.size());
     // TODO: maybe sort x and y, rather than returning an error
     for(int i=0; i<n-1; i++) {
         assert(m_x[i]<m_x[i+1]);

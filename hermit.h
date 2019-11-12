@@ -6,7 +6,6 @@
 using namespace std;
 
 
-
 //Piecewise Cubic Hermite Interpolating Polynomial
 template <class T>
 class pchip_t

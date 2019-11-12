@@ -66,9 +66,6 @@ private:
   vector<double> m_correct_points;
   std::map<double,double> m_points;
 
-//  QChart* mp_chart;
-//  QChartView* mp_chart_view;
-
   ::tk::spline m_cubic_spline;
   pchip_t<double> m_hermite_spline;
   irs::line_interp_t<double> m_linear_interpolation;

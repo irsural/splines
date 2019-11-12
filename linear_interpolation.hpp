@@ -210,9 +210,6 @@ T line_interp_t<T>::calc(T x)
 	return calc_helper(x, m_point_list);
 }
 
-// Обратная зависимость будет работать только, если линеаризуемая функция
-// монотонна (всегда увеличивается или всегда уменьшается)
-// Можно также пользоваться на "кусках", где функция монотонна
 template <class T>
 T line_interp_t<T>::calc_inv(T x)
 {
@@ -234,31 +231,3 @@ T line_interp_t<T>::calc_inv(T x)
 #endif //ARRAYSIZE
 
 } //namespace irs
-
-inline void line_interp_example()
-{
-	typedef double number_t;
-	
-	irs::line_interp_t<number_t> line_interp;
-  number_t x_carray[] = { 1, 2, 3 };
-  number_t y_carray[] = { 10, 20, 40 };
-  line_interp.assign(x_carray, y_carray, ARRAYSIZE(x_carray));
-  
-  number_t x_test[] = { 0.8, 1.7, 2.2, 3.5 };
-  size_t x_test_size = ARRAYSIZE(x_test);
-  cout << "Прямая зависимость" << endl;
-  for (size_t i = 0; i < x_test_size; i++) {
-	  number_t x = x_test[i];
-	  number_t y = line_interp.calc(x);
-	  cout << x << " ==> " << y << endl;
-  }
-  
-  number_t y_test[] = { 8, 17, 24, 50 };
-  size_t y_test_size = ARRAYSIZE(y_test);
-  cout << "Обратная зависимость" << endl;
-  for (size_t i = 0; i < y_test_size; i++) {
-	  number_t y = y_test[i];
-	  number_t x = line_interp.calc_inv(y);
-	  cout << y << " ==> " << x << endl;
-  }
-}

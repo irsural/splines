@@ -14,8 +14,6 @@ MainWindow::MainWindow(QWidget *parent) :
   m_current(),
   m_correct_points { 40, 47, 70, 120, 300, 1000, 1400, 2000 },
   m_points(),
-//  mp_chart(new QChart()),
-//  mp_chart_view(new QChartView(mp_chart, this)),
   m_cubic_spline(),
   m_hermite_spline(),
   m_linear_interpolation(),
@@ -69,15 +67,15 @@ MainWindow::~MainWindow()
 
 void MainWindow::create_chart()
 {
-  mp_hermite_data->setName("hermite");
-  mp_linear_data->setName("linear");
-  mp_cubic_data->setName("cubic");
-
-  QChart* chart = ui->chart_widget->chart();
+  mp_linear_data->setName("Linear");
+  mp_cubic_data->setName("Cubic");
+  mp_hermite_data->setName("Hermite");
 
   mp_axisX->setLabelFormat("%g");
-  chart->addAxis(mp_axisX, Qt::AlignBottom);
   mp_axisY->setLabelFormat("%g");
+
+  QChart* chart = ui->chart_widget->chart();
+  chart->addAxis(mp_axisX, Qt::AlignBottom);
   chart->addAxis(mp_axisY, Qt::AlignLeft);
 
   ui->chart_widget->setRenderHint(QPainter::Antialiasing);
@@ -489,36 +487,17 @@ void MainWindow::update_points(vector<double> a_x, vector<double> a_y,
   reinit_control_buttons();
   repaint_spline();
 
-//  set_new_zoom_start();
-
-  m_points_importer->get_next_data(import_points_t::move_direction_t::none);
+  double current_x = m_points_importer->get_next_data(import_points_t::move_direction_t::none);
+  ui->current_x_label->setText(QString::number(current_x));
 }
 
 void MainWindow::repaint_spline()
 {
   if (m_freq.size()) {
-//    vector<double> x;
-//    vector<double> y;
-
-//    if (m_draw_linear) {
-//      fill_linear(x, y);
-//      draw_line(x, y, mp_linear_data);
-//    }
-
     m_save_zoom = false;
     calc_splines(m_correct_points);
     draw_lines(m_min_x, m_max_x, m_x_step);
     m_save_zoom = true;
-
-//    if (m_draw_cubic) {
-//      fill_cubic(x, y, m_min_x, m_max_x, m_x_step);
-//      draw_line(x, y, mp_cubic_data);
-//    }
-
-//    if (m_draw_hermite) {
-//      fill_hermite(x, y, m_min_x, m_max_x, m_x_step);
-//      draw_line(x, y, mp_hermite_data);
-//    }
   }
 }
 
@@ -613,17 +592,6 @@ void MainWindow::keyPressEvent(QKeyEvent *a_event)
 
 void MainWindow::on_show_all_graps_button_clicked()
 {
-//  vector<QLineSeries*> linear_series;
-//  int graphs_count = m_points_importer->is_rows_selected() ?
-//    m_points_importer->get_rows_count() : m_points_importer->get_cols_count();
-
-//  for (int i = 0; i < graphs_count; i++) {
-//    vector<double> x;
-//    vector<double> y;
-//    m_points_importer->get_data(x, y, i);
-//    linear_series[i] = new QLineSeries(this);
-//    draw_line(x, y, linear_series[i]);
-//  }
 }
 
 void MainWindow::on_button_apply_ticks_count_clicked()

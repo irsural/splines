@@ -16,7 +16,9 @@ class import_points_dialog_t : public QDialog
   Q_OBJECT
 
 public:
-  explicit import_points_dialog_t(std::vector<double> a_correct_points,
+  enum class select_t { none, rows, cols };
+
+  explicit import_points_dialog_t(const std::vector<double>& a_correct_points,
     QStandardItemModel *a_csv_model, QString a_filepath = "",
     QWidget *parent = nullptr);
   ~import_points_dialog_t();
@@ -43,7 +45,6 @@ private:
   QStandardItemModel *m_csv_model;
 
   void insert_points_to_table(QFile* a_file);
-  void resize_dialog_for_table();
   std::vector<double> parse_correct_points();
 };
 
