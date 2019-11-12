@@ -102,61 +102,55 @@ void import_points_t::fill_data_arrays(std::vector<double> a_correct_points)
   emit points_are_ready(x, y);
 }
 
-double import_points_t::get_next_data(move_direction_t a_direction)
+void import_points_t::set_next_data(move_direction_t a_direction)
 {
-  double current_x = 0;
+  if (m_selected != import_points_dialog_t::select_t::none) {
+    switch (a_direction) {
+      case move_direction_t::up: {
+        m_selected = import_points_dialog_t::select_t::rows;
+        if (m_selected_row > 1) {
+          m_selected_row--;
+        }
+      } break;
+      case move_direction_t::down: {
+        m_selected = import_points_dialog_t::select_t::rows;
+        if (m_selected_row < m_csv_model->rowCount() - 1) {
+          m_selected_row++;
+        }
+      } break;
+      case move_direction_t::right: {
+        m_selected = import_points_dialog_t::select_t::cols;
+        if (m_selected_col < m_csv_model->columnCount() - 1) {
+          m_selected_col++;
+        }
+      } break;
+      case move_direction_t::left: {
+        m_selected = import_points_dialog_t::select_t::cols;
+        if (m_selected_col > 1) {
+          m_selected_col--;
+        }
+      } break;
+      default: break;
+    }
+    fill_data_arrays(m_correct_points);
+  }
+}
 
+double import_points_t::get_x()
+{
+  QString current_x_str;
   switch (m_selected) {
     case import_points_dialog_t::select_t::none: {
       //Точки еще не были импортированы
-      return current_x;
-    } break;
+      return 0;
+    };
     case import_points_dialog_t::select_t::rows: {
-      //Для вызова с a_direction == none
-      QString current_x_str = m_csv_model->item(m_selected_row, 0)->text();
-      current_x = current_x_str.replace(",",".").toDouble();
+      current_x_str = m_csv_model->item(m_selected_row, 0)->text();
     } break;
     case import_points_dialog_t::select_t::cols: {
-      QString current_x_str = m_csv_model->item(0, m_selected_col)->text();
-      current_x = current_x_str.replace(",",".").toDouble();
+      current_x_str = m_csv_model->item(0, m_selected_col)->text();
     } break;
   }
-
-  switch (a_direction) {
-    case move_direction_t::up: {
-      m_selected = import_points_dialog_t::select_t::rows;
-      if (m_selected_row > 1) {
-        m_selected_row--;
-        fill_data_arrays(m_correct_points);
-        current_x = m_csv_model->item(m_selected_row, 0)->text().replace(",",".").toDouble();
-      }
-    } break;
-    case move_direction_t::down: {
-      m_selected = import_points_dialog_t::select_t::rows;
-      if (m_selected_row < m_csv_model->rowCount() - 1) {
-        m_selected_row++;
-        fill_data_arrays(m_correct_points);
-        current_x = m_csv_model->item(m_selected_row, 0)->text().replace(",",".").toDouble();
-      }
-    } break;
-    case move_direction_t::right: {
-      m_selected = import_points_dialog_t::select_t::cols;
-      if (m_selected_col < m_csv_model->columnCount() - 1) {
-        m_selected_col++;
-        fill_data_arrays(m_correct_points);
-        current_x = m_csv_model->item(0, m_selected_col)->text().replace(",",".").toDouble();
-      }
-    } break;
-    case move_direction_t::left: {
-      m_selected = import_points_dialog_t::select_t::cols;
-      if (m_selected_col > 1) {
-        m_selected_col--;
-        fill_data_arrays(m_correct_points);
-        current_x = m_csv_model->item(0, m_selected_col)->text().replace(",",".").toDouble();
-      }
-    } break;
-    default: break;
-  }
-  return current_x;
+  return current_x_str.replace(",",".").toDouble();
 }
 

@@ -500,7 +500,7 @@ void MainWindow::update_points(vector<double> &a_x, vector<double> &a_y)
       reinit_control_buttons();
       repaint_spline();
 
-      double current_x = m_points_importer->get_next_data(import_points_t::move_direction_t::none);
+      double current_x = m_points_importer->get_x();
       ui->current_x_label->setText(QString::number(current_x));
     } break;
     case input_data_error_t::no_data: {
@@ -599,21 +599,14 @@ void MainWindow::on_checkBox_6_stateChanged(int a_state)
 
 void MainWindow::keyPressEvent(QKeyEvent *a_event)
 {
-  import_points_t::move_direction_t move_direction =
-    import_points_t::move_direction_t::none;
-
   if (a_event->nativeScanCode() == 17/*w*/) {
-    move_direction = import_points_t::move_direction_t::up;
+    m_points_importer->set_next_data(import_points_t::move_direction_t::up);
   } else if (a_event->nativeScanCode() == 31/*s*/) {
-    move_direction = import_points_t::move_direction_t::down;
+    m_points_importer->set_next_data(import_points_t::move_direction_t::down);
   } else if (a_event->nativeScanCode() == 30/*a*/) {
-    move_direction = import_points_t::move_direction_t::left;
+    m_points_importer->set_next_data(import_points_t::move_direction_t::left);
   } else if (a_event->nativeScanCode() == 32/*d*/) {
-    move_direction = import_points_t::move_direction_t::right;
-  }
-  if (move_direction != import_points_t::move_direction_t::none) {
-    double current_x = m_points_importer->get_next_data(move_direction);
-    ui->current_x_label->setText(QString::number(current_x));
+    m_points_importer->set_next_data(import_points_t::move_direction_t::right);
   }
 }
 

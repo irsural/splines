@@ -9,13 +9,14 @@ class import_points_t : public QObject
 {
   Q_OBJECT
 public:
-  enum class move_direction_t { up, down, left, right, none };
+  enum class move_direction_t { up, down, left, right };
 
   explicit import_points_t(std::vector<double>& a_correct_points, QObject *parent = nullptr);
 
   void create_import_points_dialog(QWidget *a_parent);
   void set_correct_points(const std::vector<double>& a_correct_points);
-  double get_next_data(move_direction_t a_direction);
+  void set_next_data(move_direction_t a_direction);
+  double get_x();
 
 signals:
   void points_are_ready(std::vector<double> &a_x, std::vector<double> &a_y);
