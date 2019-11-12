@@ -10,7 +10,7 @@ using namespace std;
 
 //Piecewise Cubic Hermite Interpolating Polynomial
 template <class T>
-class pchip_t : interpolation_base_t
+class pchip_t : public interpolation_base_t
 {
 public:
     ~pchip_t();

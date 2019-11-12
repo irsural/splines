@@ -22,7 +22,7 @@ void out_map(T& a_map)
 }
 
 template <class T>
-class line_interp_t : interpolation_base_t
+class line_interp_t : public interpolation_base_t
 {
 public:
 	line_interp_t();

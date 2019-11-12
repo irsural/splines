@@ -74,7 +74,7 @@ public:
 
 
 // spline interpolation
-class spline : interpolation_base_t
+class spline : public interpolation_base_t
 {
 public:
     enum bd_type {

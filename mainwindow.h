@@ -52,7 +52,6 @@ private slots:
   void on_checkBox_5_stateChanged(int a_state);
   void on_checkBox_6_stateChanged(int a_state);
   void update_points(vector<double> &a_x, vector<double> &a_y);
-  void on_show_all_graps_button_clicked();
   void on_button_apply_clicked();
 
   void chart_was_zoomed(qreal min, qreal max);
@@ -66,9 +65,20 @@ private:
     arrays_not_same_size
   };
 
-  struct graph_info {
-
+  enum interpolation_type_t {
+    it_cubic = 0,
+    it_hermite = 1,
+    it_linear = 2,
+    it_count = 3
   };
+
+  struct interpolation_t {
+    interpolation_base_t* interpolation;
+    vector<QLabel*> diff_labels;
+    QLineSeries* series;
+    bool draw;
+  };
+
 
   Ui::MainWindow *ui;
 
@@ -120,8 +130,11 @@ private:
 
   import_points_t* m_points_importer;
 
+  std::array<interpolation_t, interpolation_type_t::it_count> m_interpolation_data;
+
   void create_chart();
   void create_control(const vector<double>& a_x);
+  void create_control_test(const vector<double>& a_x);
   input_data_error_t verify_data(const vector<double>& a_x, const vector<double>& a_y);
   void calc_splines(const vector<double> &a_correct_points);
   double get_diff(double a_real, double a_calculated);
@@ -140,6 +153,9 @@ private:
 
   void repaint_spline();
   void reinit_control_buttons();
+
+  void repaint_spline_test();
+  void reinit_control_buttons_test();
 
   void keyPressEvent(QKeyEvent *a_event);
   void mouseDoubleClickEvent(QMouseEvent *event);

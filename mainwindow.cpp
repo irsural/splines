@@ -47,15 +47,26 @@ MainWindow::MainWindow(QWidget *parent) :
   m_start_zoom(),
   m_zoom_stack(),
   m_save_zoom(false),
-  m_points_importer(new import_points_t(m_correct_points, this))
+  m_points_importer(new import_points_t(m_correct_points, this)),
+  m_interpolation_data()
 {
   ui->setupUi(this);
 
   create_chart();
-
   connect(m_points_importer, &import_points_t::points_are_ready,
     this, &MainWindow::update_points);
 
+  m_interpolation_data[it_cubic].interpolation = new tk::spline();
+  m_interpolation_data[it_cubic].series = new QLineSeries(this);
+  m_interpolation_data[it_cubic].draw = true;
+
+  m_interpolation_data[it_hermite].interpolation = new pchip_t<double>();
+  m_interpolation_data[it_hermite].series = new QLineSeries(this);
+  m_interpolation_data[it_hermite].draw = true;
+
+  m_interpolation_data[it_linear].interpolation = new irs::line_interp_t<double>();
+  m_interpolation_data[it_linear].series = new QLineSeries(this);
+  m_interpolation_data[it_linear].draw = true;
 }
 
 MainWindow::~MainWindow()
@@ -477,6 +488,71 @@ MainWindow::input_data_error_t MainWindow::verify_data(const vector<double>& a_x
   return input_data_error_t::none;
 }
 
+
+void MainWindow::create_control_test(const vector<double>& a_x)
+{
+  size_t row_ind = 0;
+  for(auto x: a_x) {
+    mp_layouts[row_ind] = new QHBoxLayout();
+    ui->buttons_layout->addLayout(mp_layouts[row_ind]);
+
+    mp_point_checkboxes[row_ind] = new QCheckBox(QString::number(x), this);
+    mp_layouts[row_ind]->addWidget(mp_point_checkboxes[row_ind]);
+
+    if (std::find(m_correct_points.begin(), m_correct_points.end(), x)
+      != m_correct_points.end())
+    {
+      mp_point_checkboxes[row_ind]->setChecked(true);
+    }
+    connect(mp_point_checkboxes[row_ind], &QCheckBox::clicked, this,
+      &MainWindow::redraw_spline);
+
+    for (auto& interpolation: m_interpolation_data) {
+      interpolation.diff_labels[row_ind] = new QLabel("0.00000", this);
+      interpolation.diff_labels[row_ind]->setAutoFillBackground(true);
+      mp_layouts[row_ind]->addWidget(interpolation.diff_labels[row_ind]);
+    }
+
+    row_ind++;
+  }
+}
+
+
+void MainWindow::reinit_control_buttons_test()
+{
+  m_min_x = m_x.front();
+  m_max_x = m_x.back();
+  m_min_y = std::numeric_limits<double>::max();
+  m_max_y = std::numeric_limits<double>::min();
+  m_x_step = m_auto_step ? (m_x.back() - m_x.front()) / 400 : m_x_step;
+
+  ui->xmin_spinbox->setValue(m_min_x);
+  ui->xmax_spinbox->setValue(m_max_x);
+  ui->xstep_spinbox->setValue(m_x_step);
+
+  for (size_t i = 0; i < mp_layouts.size(); i++) {
+    if (mp_layouts[i] != nullptr) delete mp_layouts[i];
+    if (mp_point_checkboxes[i] != nullptr) delete mp_point_checkboxes[i];
+
+    for (auto& interpolation: m_interpolation_data) {
+      if (interpolation.diff_labels[i] != nullptr) delete interpolation.diff_labels[i];
+    }
+  }
+
+  mp_layouts.resize(m_x.size());
+  mp_point_checkboxes.resize(m_x.size());
+
+  for (auto& interpolation: m_interpolation_data) {
+    interpolation.diff_labels.resize(m_x.size());
+  }
+  create_control_test(m_x);
+}
+
+void MainWindow::repaint_spline_test()
+{
+
+}
+
 void MainWindow::update_points(vector<double> &a_x, vector<double> &a_y)
 {
   input_data_error_t error = verify_data(a_x, a_y);
@@ -486,8 +562,10 @@ void MainWindow::update_points(vector<double> &a_x, vector<double> &a_y)
       m_x = std::move(a_x);
       m_y = std::move(a_y);
 
-      reinit_control_buttons();
-      repaint_spline();
+//      reinit_control_buttons();
+//      repaint_spline();
+    reinit_control_buttons_test();
+    repaint_spline_test();
 
       ui->current_x_label->setText(m_points_importer->get_x());
     } break;
@@ -596,10 +674,6 @@ void MainWindow::keyPressEvent(QKeyEvent *a_event)
   } else if (a_event->nativeScanCode() == 32/*d*/) {
     m_points_importer->set_next_data(import_points_t::move_direction_t::right);
   }
-}
-
-void MainWindow::on_show_all_graps_button_clicked()
-{
 }
 
 void MainWindow::on_button_apply_clicked()
