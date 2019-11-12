@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "worst_searcher.h"
 
 #include <cmath>
 #include <limits>
@@ -154,55 +155,42 @@ void MainWindow::calc_splines(const vector<double> &a_correct_points)
   calc_difs();
 }
 
+double MainWindow::get_diff(double a_real, double a_calculated)
+{
+  return (a_real - a_calculated) / a_calculated * 100;
+}
+
+
 void MainWindow::calc_difs()
 {
-  size_t worst_cubic_ind = 0;
-  double worst_cubic_val = 0;
-  size_t worst_hermite_ind = 0;
-  double worst_hermite_val = 0;
-  size_t worst_linear_ind = 0;
-  double worst_linear_val = 0;
+  worst_searcher_t<double> worst_cubic;
+  worst_searcher_t<double> worst_hermite;
+  worst_searcher_t<double> worst_linear;
 
   size_t label_ind = 0;
   for (auto a_pair: m_points_map) {
     double real_value = a_pair.second;
 
     double cubic_value = m_cubic_spline(a_pair.first);
-    double cubic_diff = (real_value - cubic_value) / cubic_value * 100;
+    double cubic_diff = get_diff(real_value, cubic_value);
+    mp_diff_cubic_labels[label_ind]->setText(QString::number(cubic_diff));
+    mp_diff_cubic_labels[label_ind]->setPalette(m_default_color);
 
     double hermite_value = m_hermite_spline(a_pair.first);
-    double hermite_diff = (real_value - hermite_value) / hermite_value * 100;
+    double hermite_diff = get_diff(real_value, hermite_value);
+    mp_diff_hermite_labels[label_ind]->setText(QString::number(hermite_diff));
+    mp_diff_hermite_labels[label_ind]->setPalette(m_default_color);
 
     double linear_value = m_linear_interpolation(a_pair.first);
-    double linear_diff = (real_value - linear_value) / linear_value * 100;
-
-    mp_diff_cubic_labels[label_ind]->setText(QString::number(cubic_diff));
-    mp_diff_hermite_labels[label_ind]->setText(QString::number(hermite_diff));
+    double linear_diff = get_diff(real_value, linear_value);
     mp_diff_linear_labels[label_ind]->setText(QString::number(linear_diff));
+    mp_diff_linear_labels[label_ind]->setPalette(m_default_color);
+
 
     if (abs(cubic_diff) < abs(hermite_diff)) {
       mp_diff_cubic_labels[label_ind]->setPalette(m_better_color);
-      mp_diff_hermite_labels[label_ind]->setPalette(m_default_color);
     } else if (abs(cubic_diff) > abs(hermite_diff)) {
-      mp_diff_cubic_labels[label_ind]->setPalette(m_default_color);
       mp_diff_hermite_labels[label_ind]->setPalette(m_better_color);
-    } else {
-      mp_diff_cubic_labels[label_ind]->setPalette(m_default_color);
-      mp_diff_hermite_labels[label_ind]->setPalette(m_default_color);
-    }
-    mp_diff_linear_labels[label_ind]->setPalette(m_default_color);
-
-    if (worst_cubic_val < abs(cubic_diff)) {
-      worst_cubic_val = abs(cubic_diff);
-      worst_cubic_ind = label_ind;
-    }
-    if (worst_hermite_val < abs(hermite_diff)) {
-      worst_hermite_val = abs(hermite_diff);
-      worst_hermite_ind = label_ind;
-    }
-    if (worst_linear_val < abs(linear_diff)) {
-      worst_linear_val = abs(linear_diff);
-      worst_linear_ind = label_ind;
     }
 
     if (abs(cubic_diff) > ui->spinbox_mark_limit->value()) {
@@ -211,12 +199,19 @@ void MainWindow::calc_difs()
     if (abs(hermite_diff) > ui->spinbox_mark_limit->value()) {
       mp_diff_hermite_labels[label_ind]->setPalette(m_limit_color);
     }
+    if (abs(linear_diff) > ui->spinbox_mark_limit->value()) {
+      mp_diff_linear_labels[label_ind]->setPalette(m_limit_color);
+    }
+
+    worst_cubic.add(abs(cubic_diff));
+    worst_hermite.add(abs(hermite_diff));
+    worst_linear.add(abs(linear_diff));
 
     label_ind++;
   }
-  mp_diff_cubic_labels[worst_cubic_ind]->setPalette(m_worst_color);
-  mp_diff_hermite_labels[worst_hermite_ind]->setPalette(m_worst_color);
-  mp_diff_linear_labels[worst_linear_ind]->setPalette(m_worst_color);
+  mp_diff_cubic_labels[worst_cubic.get_index()]->setPalette(m_worst_color);
+  mp_diff_hermite_labels[worst_hermite.get_index()]->setPalette(m_worst_color);
+  mp_diff_linear_labels[worst_linear.get_index()]->setPalette(m_worst_color);
 }
 
 void MainWindow::draw_lines(double a_min, double a_max, double a_step)
@@ -296,6 +291,7 @@ void MainWindow::draw_lines(double a_min, double a_max, double a_step)
 
 std::tuple<double, double> get_double_power(double a_val)
 {
+  //Возвращает мантиссу и разряд base(10) экспоненты для double числа
   double value = 0;
   double power = 0;
   if (a_val > std::numeric_limits<double>::epsilon()) {
@@ -390,8 +386,7 @@ void MainWindow::fill_linear(vector<double>& a_x, vector<double>& a_y)
   }
 }
 
-void MainWindow::draw_line(const vector<double>& a_x,
-  const vector<double> &a_y, QLineSeries* a_series)
+void MainWindow::draw_line(const vector<double>& a_x, const vector<double> &a_y, QLineSeries* a_series)
 {
   a_series->clear();
   double min_y = std::numeric_limits<double>::max();

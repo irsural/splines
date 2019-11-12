@@ -38,7 +38,8 @@ HEADERS += \
         linear_interpolation.hpp \
         linear_interpolation.hpp \
         mainwindow.h \
-        spline.h
+        spline.h \
+        worst_searcher.h
 
 FORMS += \
         import_points_form.ui \

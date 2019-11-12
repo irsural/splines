@@ -120,6 +120,7 @@ private:
   void create_control(const vector<double>& a_x);
   input_data_error_t verify_data(const vector<double>& a_x, const vector<double>& a_y);
   void calc_splines(const vector<double> &a_correct_points);
+  double get_diff(double a_real, double a_calculated);
   void calc_difs();
   void draw_lines(double a_min, double a_max, double a_step);
   double calc_chart_tick_interval(double a_min, double a_max,
