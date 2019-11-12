@@ -43,6 +43,7 @@ private:
 
   QString m_csv_filepath;
   QStandardItemModel *m_csv_model;
+  bool m_data_format_error;
 
   void insert_points_to_table(QFile* a_file);
   std::vector<double> parse_correct_points();

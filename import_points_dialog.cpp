@@ -12,7 +12,8 @@ import_points_dialog_t::import_points_dialog_t(const std::vector<double> &a_corr
   QDialog(parent),
   ui(new Ui::Dialog),
   m_csv_filepath(a_filepath),
-  m_csv_model(a_csv_model)
+  m_csv_model(a_csv_model),
+  m_data_format_error(false)
 {
   ui->setupUi(this);
 
@@ -89,13 +90,22 @@ void import_points_dialog_t::vhSelected(int a_row)
 void import_points_dialog_t::insert_points_to_table(QFile* a_file)
 {
   m_csv_model->clear();
+  m_data_format_error = false;
 
   QTextStream file_sream(a_file);
+  QString header = file_sream.readLine();
+  int columns_count = header.split(";").size();
+  file_sream.seek(0);
+
   while (!file_sream.atEnd())
   {
-    QString line = file_sream.readLine();
+    auto values = file_sream.readLine().split(";");
+    if (values.size() != columns_count) {
+      m_data_format_error = true;
+    }
+
     QList<QStandardItem *> standardItemsList;
-    for (auto& item : line.split(";")) {
+    for (auto& item : values) {
         standardItemsList.append(new QStandardItem(item));
     }
     m_csv_model->insertRow(m_csv_model->rowCount(), standardItemsList);
@@ -122,18 +132,22 @@ std::vector<double> import_points_dialog_t::parse_correct_points()
 
 void import_points_dialog_t::on_accept_points_button_clicked()
 {
-  bool rows_selected = !ui->points_table->selectionModel()->selectedRows().isEmpty();
-  bool cols_selected = !ui->points_table->selectionModel()->selectedColumns().isEmpty();
-  //Одновременно только или строки или столбцы
-  assert(!rows_selected || !cols_selected);
+  if (!m_data_format_error) {
+    bool rows_selected = !ui->points_table->selectionModel()->selectedRows().isEmpty();
+    bool cols_selected = !ui->points_table->selectionModel()->selectedColumns().isEmpty();
+    //Одновременно только или строки или столбцы
+    assert(!rows_selected || !cols_selected);
 
-  if (rows_selected || cols_selected) {
-    assert(rows_selected == !cols_selected);
+    if (rows_selected || cols_selected) {
+      assert(rows_selected == !cols_selected);
 
-    emit selection_done(parse_correct_points());
-    close();
+      emit selection_done(parse_correct_points());
+      close();
+    } else {
+      QMessageBox::critical(this, "Error", "Select cells to continue");
+    }
   } else {
-    QMessageBox::critical(this, "Error", "Select cells to continue");
+    QMessageBox::critical(this, "Error", "Invalid data format");
   }
 }
 
