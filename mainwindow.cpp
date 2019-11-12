@@ -18,6 +18,7 @@ MainWindow::MainWindow(QWidget *parent) :
   m_cubic_spline(),
   m_hermite_spline(),
   m_linear_interpolation(),
+  m_interpolation_data(),
   mp_linear_data(new QLineSeries(this)),
   mp_cubic_data(new QLineSeries(this)),
   mp_hermite_data(new QLineSeries(this)),
@@ -33,7 +34,7 @@ MainWindow::MainWindow(QWidget *parent) :
   m_draw_linear(true),
   m_draw_cubic(false),
   m_draw_hermite(true),
-  mp_layouts(m_x.size()),
+  mp_deviation_layouts(m_x.size()),
   mp_point_checkboxes(m_x.size()),
   mp_diff_cubic_labels(m_x.size()),
   mp_diff_hermite_labels(m_x.size()),
@@ -47,8 +48,7 @@ MainWindow::MainWindow(QWidget *parent) :
   m_start_zoom(),
   m_zoom_stack(),
   m_save_zoom(false),
-  m_points_importer(new import_points_t(m_correct_points, this)),
-  m_interpolation_data()
+  m_points_importer(new import_points_t(m_correct_points, this))
 {
   ui->setupUi(this);
 
@@ -56,15 +56,15 @@ MainWindow::MainWindow(QWidget *parent) :
   connect(m_points_importer, &import_points_t::points_are_ready,
     this, &MainWindow::update_points);
 
-  m_interpolation_data[it_cubic].interpolation = new tk::spline();
+  m_interpolation_data[it_cubic].interpolation = &m_cubic_spline;
   m_interpolation_data[it_cubic].series = new QLineSeries(this);
   m_interpolation_data[it_cubic].draw = true;
 
-  m_interpolation_data[it_hermite].interpolation = new pchip_t<double>();
+  m_interpolation_data[it_hermite].interpolation = &m_hermite_spline;
   m_interpolation_data[it_hermite].series = new QLineSeries(this);
   m_interpolation_data[it_hermite].draw = true;
 
-  m_interpolation_data[it_linear].interpolation = new irs::line_interp_t<double>();
+  m_interpolation_data[it_linear].interpolation = &m_linear_interpolation;
   m_interpolation_data[it_linear].series = new QLineSeries(this);
   m_interpolation_data[it_linear].draw = true;
 }
@@ -118,40 +118,6 @@ void MainWindow::create_chart()
 
 }
 
-void MainWindow::create_control(const vector<double>& a_x)
-{
-  size_t row_ind = 0;
-  for(auto x: a_x) {
-    mp_layouts[row_ind] = new QHBoxLayout();
-    ui->buttons_layout->addLayout(mp_layouts[row_ind]);
-
-    mp_point_checkboxes[row_ind] = new QCheckBox(QString::number(x), this);
-    mp_layouts[row_ind]->addWidget(mp_point_checkboxes[row_ind]);
-
-    if (std::find(m_correct_points.begin(), m_correct_points.end(), x)
-      != m_correct_points.end())
-    {
-      mp_point_checkboxes[row_ind]->setChecked(true);
-    }
-    connect(mp_point_checkboxes[row_ind], &QCheckBox::clicked, this,
-      &MainWindow::redraw_spline);
-
-    mp_diff_cubic_labels[row_ind] = new QLabel("0.00000", this);
-    mp_diff_cubic_labels[row_ind]->setAutoFillBackground(true);
-    mp_layouts[row_ind]->addWidget(mp_diff_cubic_labels[row_ind]);
-
-    mp_diff_hermite_labels[row_ind] = new QLabel("0.00000", this);
-    mp_diff_hermite_labels[row_ind]->setAutoFillBackground(true);
-    mp_layouts[row_ind]->addWidget(mp_diff_hermite_labels[row_ind]);
-
-    mp_diff_linear_labels[row_ind] = new QLabel("0.00000", this);
-    mp_diff_linear_labels[row_ind]->setAutoFillBackground(true);
-    mp_layouts[row_ind]->addWidget(mp_diff_linear_labels[row_ind]);
-
-    row_ind++;
-  }
-}
-
 
 void MainWindow::calc_splines(const vector<double> &a_correct_points)
 {
@@ -174,16 +140,16 @@ void MainWindow::calc_splines(const vector<double> &a_correct_points)
   m_hermite_spline.set_points(a_correct_points.data(), correct_values.data(), a_correct_points.size());
   m_linear_interpolation.set_points(a_correct_points.data(), correct_values.data(), a_correct_points.size());
 
-  calc_difs();
+  calc_deviations();
 }
 
-double MainWindow::get_diff(double a_real, double a_calculated)
+double MainWindow::deviation(double a_real, double a_calculated)
 {
   return (a_real - a_calculated) / a_calculated * 100;
 }
 
 
-void MainWindow::calc_difs()
+void MainWindow::calc_deviations()
 {
   worst_searcher_t<double> worst_cubic;
   worst_searcher_t<double> worst_hermite;
@@ -194,19 +160,19 @@ void MainWindow::calc_difs()
     double real_value = a_pair.second;
 
     double cubic_value = m_cubic_spline(a_pair.first);
-    double cubic_diff = get_diff(real_value, cubic_value);
+    double cubic_diff = deviation(real_value, cubic_value);
     worst_cubic.add(abs(cubic_diff));
     mp_diff_cubic_labels[label_ind]->setText(QString::number(cubic_diff));
     mp_diff_cubic_labels[label_ind]->setPalette(m_default_color);
 
     double hermite_value = m_hermite_spline(a_pair.first);
-    double hermite_diff = get_diff(real_value, hermite_value);
+    double hermite_diff = deviation(real_value, hermite_value);
     worst_hermite.add(abs(hermite_diff));
     mp_diff_hermite_labels[label_ind]->setText(QString::number(hermite_diff));
     mp_diff_hermite_labels[label_ind]->setPalette(m_default_color);
 
     double linear_value = m_linear_interpolation(a_pair.first);
-    double linear_diff = get_diff(real_value, linear_value);
+    double linear_diff = deviation(real_value, linear_value);
     worst_linear.add(abs(linear_diff));
     mp_diff_linear_labels[label_ind]->setText(QString::number(linear_diff));
     mp_diff_linear_labels[label_ind]->setPalette(m_default_color);
@@ -441,34 +407,6 @@ void MainWindow::redraw_spline(bool a_checked)
   repaint_spline();
 }
 
-void MainWindow::reinit_control_buttons()
-{
-  for (size_t i = 0; i < mp_layouts.size(); i++) {
-    if (mp_layouts[i] != nullptr) delete mp_layouts[i];
-    if (mp_point_checkboxes[i] != nullptr) delete mp_point_checkboxes[i];
-    if (mp_diff_cubic_labels[i] != nullptr) delete mp_diff_cubic_labels[i];
-    if (mp_diff_hermite_labels[i] != nullptr) delete mp_diff_hermite_labels[i];
-    if (mp_diff_linear_labels[i] != nullptr) delete mp_diff_linear_labels[i];
-  }
-
-  m_min_x = m_x.front();
-  m_max_x = m_x.back();
-  m_min_y = std::numeric_limits<double>::max();
-  m_max_y = std::numeric_limits<double>::min();
-  m_x_step = m_auto_step ? (m_x.back() - m_x.front()) / 400 : m_x_step;
-  mp_layouts.resize(m_x.size());
-  mp_point_checkboxes.resize(m_x.size());
-  mp_diff_cubic_labels.resize(m_x.size());
-  mp_diff_hermite_labels.resize(m_x.size());
-  mp_diff_linear_labels.resize(m_x.size());
-
-  ui->xmin_spinbox->setValue(m_min_x);
-  ui->xmax_spinbox->setValue(m_max_x);
-  ui->xstep_spinbox->setValue(m_x_step);
-
-  create_control(m_x);
-}
-
 MainWindow::input_data_error_t MainWindow::verify_data(const vector<double>& a_x, const vector<double>& a_y)
 {
   if (a_x.empty() || a_y.empty()) {
@@ -489,36 +427,55 @@ MainWindow::input_data_error_t MainWindow::verify_data(const vector<double>& a_x
 }
 
 
-void MainWindow::create_control_test(const vector<double>& a_x)
+
+void MainWindow::create_control(const vector<double>& a_x)
 {
-  size_t row_ind = 0;
-  for(auto x: a_x) {
-    mp_layouts[row_ind] = new QHBoxLayout();
-    ui->buttons_layout->addLayout(mp_layouts[row_ind]);
+//  size_t row_ind = 0;
+//  for(auto x: a_x) {
+  for (size_t i = 0; i < a_x.size(); i++) {
+    auto x = a_x[i];
 
-    mp_point_checkboxes[row_ind] = new QCheckBox(QString::number(x), this);
-    mp_layouts[row_ind]->addWidget(mp_point_checkboxes[row_ind]);
+    QHBoxLayout* new_layout = new QHBoxLayout();
+    QCheckBox* point_checkbox = new QCheckBox(QString::number(x), this);
 
-    if (std::find(m_correct_points.begin(), m_correct_points.end(), x)
-      != m_correct_points.end())
-    {
-      mp_point_checkboxes[row_ind]->setChecked(true);
+    new_layout->addWidget(point_checkbox);
+    ui->buttons_layout->addLayout(new_layout);
+
+    if (std::find(m_correct_points.begin(), m_correct_points.end(), x) != m_correct_points.end()) {
+      point_checkbox->setChecked(true);
     }
-    connect(mp_point_checkboxes[row_ind], &QCheckBox::clicked, this,
-      &MainWindow::redraw_spline);
+    connect(point_checkbox, &QCheckBox::clicked, this, &MainWindow::redraw_spline);
+
+    mp_point_checkboxes[i] = point_checkbox;
+    mp_deviation_layouts[i] = new_layout;
 
     for (auto& interpolation: m_interpolation_data) {
-      interpolation.diff_labels[row_ind] = new QLabel("0.00000", this);
-      interpolation.diff_labels[row_ind]->setAutoFillBackground(true);
-      mp_layouts[row_ind]->addWidget(interpolation.diff_labels[row_ind]);
+      interpolation.deviation_labels[i] = new QLabel("0.00000", this);
+      interpolation.deviation_labels[i]->setAutoFillBackground(true);
+      mp_deviation_layouts[i]->addWidget(interpolation.deviation_labels[i]);
     }
-
-    row_ind++;
   }
 }
 
+void MainWindow::reset_deviation_layouts()
+{
+  for (size_t i = 0; i < mp_deviation_layouts.size(); i++) {
+    if (mp_deviation_layouts[i] != nullptr) delete mp_deviation_layouts[i];
+    if (mp_point_checkboxes[i] != nullptr) delete mp_point_checkboxes[i];
 
-void MainWindow::reinit_control_buttons_test()
+    for (auto& interpolation: m_interpolation_data) {
+      if (interpolation.deviation_labels[i] != nullptr) delete interpolation.deviation_labels[i];
+    }
+  }
+
+  mp_deviation_layouts.resize(m_x.size());
+  mp_point_checkboxes.resize(m_x.size());
+  for (auto& interpolation: m_interpolation_data) {
+    interpolation.deviation_labels.resize(m_x.size());
+  }
+}
+
+void MainWindow::reinit_control_buttons()
 {
   m_min_x = m_x.front();
   m_max_x = m_x.back();
@@ -530,25 +487,11 @@ void MainWindow::reinit_control_buttons_test()
   ui->xmax_spinbox->setValue(m_max_x);
   ui->xstep_spinbox->setValue(m_x_step);
 
-  for (size_t i = 0; i < mp_layouts.size(); i++) {
-    if (mp_layouts[i] != nullptr) delete mp_layouts[i];
-    if (mp_point_checkboxes[i] != nullptr) delete mp_point_checkboxes[i];
-
-    for (auto& interpolation: m_interpolation_data) {
-      if (interpolation.diff_labels[i] != nullptr) delete interpolation.diff_labels[i];
-    }
-  }
-
-  mp_layouts.resize(m_x.size());
-  mp_point_checkboxes.resize(m_x.size());
-
-  for (auto& interpolation: m_interpolation_data) {
-    interpolation.diff_labels.resize(m_x.size());
-  }
-  create_control_test(m_x);
+  reset_deviation_layouts();
+  create_control(m_x);
 }
 
-void MainWindow::repaint_spline_test()
+void MainWindow::repaint_spline()
 {
 
 }
@@ -562,10 +505,8 @@ void MainWindow::update_points(vector<double> &a_x, vector<double> &a_y)
       m_x = std::move(a_x);
       m_y = std::move(a_y);
 
-//      reinit_control_buttons();
-//      repaint_spline();
-    reinit_control_buttons_test();
-    repaint_spline_test();
+      reinit_control_buttons();
+      repaint_spline();
 
       ui->current_x_label->setText(m_points_importer->get_x());
     } break;
@@ -584,15 +525,15 @@ void MainWindow::update_points(vector<double> &a_x, vector<double> &a_y)
   }
 }
 
-void MainWindow::repaint_spline()
-{
-  if (!m_x.empty()) {
-    m_save_zoom = false;
-    calc_splines(m_correct_points);
-    draw_lines(m_min_x, m_max_x, m_x_step);
-    m_save_zoom = true;
-  }
-}
+//void MainWindow::repaint_spline()
+//{
+//  if (!m_x.empty()) {
+//    m_save_zoom = false;
+//    calc_splines(m_correct_points);
+//    draw_lines(m_min_x, m_max_x, m_x_step);
+//    m_save_zoom = true;
+//  }
+//}
 
 void MainWindow::on_xmin_spinbox_valueChanged(double a_val)
 {

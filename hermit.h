@@ -13,9 +13,8 @@ template <class T>
 class pchip_t : public interpolation_base_t
 {
 public:
-    ~pchip_t();
     pchip_t();
-
+    virtual ~pchip_t() override;
     virtual void set_points(const T *a_x, const T *a_y, size_t a_length) override;
     virtual T operator()(T a_x) override;
 private:

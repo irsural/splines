@@ -152,6 +152,15 @@ std::vector<double> band_matrix::lu_solve(const std::vector<double>& b,
 // spline implementation
 // -----------------------
 
+spline::spline(): m_left(second_deriv), m_right(second_deriv), m_left_value(0.0), m_right_value(0.0),
+    m_force_linear_extrapolation(false)
+{
+}
+
+spline::~spline()
+{
+}
+
 void spline::set_boundary(spline::bd_type left, double left_value,
                           spline::bd_type right, double right_value,
                           bool force_linear_extrapolation)

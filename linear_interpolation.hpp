@@ -26,12 +26,14 @@ class line_interp_t : public interpolation_base_t
 {
 public:
 	line_interp_t();
+  virtual ~line_interp_t() override;
+  virtual void set_points(const T* ap_x_carray, const T* ap_y_carray, size_t a_size) override;
+  virtual T operator()(T x) override;
+
 	void add(T a_x, T a_y);
 	void clear();
-  virtual void set_points(const T* ap_x_carray, const T* ap_y_carray, size_t a_size) override;
 	void prepare();
 	void prepare_inv();
-  virtual T operator()(T x) override;
 	T calc_inv(T x);
 
 private:
@@ -77,7 +79,11 @@ line_interp_t<T>::line_interp_t():
 	m_ready_inv(false),
 	m_point_list_inv()
 {
-	;
+}
+
+template <class T>
+line_interp_t<T>::~line_interp_t()
+{
 }
 
 template <class T>

@@ -7,8 +7,8 @@ class interpolation_base_t
 {
 public:
   virtual ~interpolation_base_t() {}
-  virtual void set_points(const double* a_x, const double* a_y, size_t a_length);
-  virtual double operator()(double a_x);
+  virtual void set_points(const double* a_x, const double* a_y, size_t a_length) = 0;
+  virtual double operator()(double a_x) = 0;
 };
 
 

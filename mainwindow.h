@@ -73,9 +73,9 @@ private:
   };
 
   struct interpolation_t {
-    interpolation_base_t* interpolation;
-    vector<QLabel*> diff_labels;
+    interpolation_base_t *interpolation;
     QLineSeries* series;
+    vector<QLabel*> deviation_labels;
     bool draw;
   };
 
@@ -90,6 +90,8 @@ private:
   ::tk::spline m_cubic_spline;
   pchip_t<double> m_hermite_spline;
   irs::line_interp_t<double> m_linear_interpolation;
+
+  std::array<interpolation_t, interpolation_type_t::it_count> m_interpolation_data;
 
   QLineSeries* mp_linear_data;
   QLineSeries* mp_cubic_data;
@@ -110,7 +112,7 @@ private:
   bool m_draw_cubic;
   bool m_draw_hermite;
 
-  vector<QHBoxLayout*> mp_layouts;
+  vector<QHBoxLayout*> mp_deviation_layouts;
   vector<QCheckBox*> mp_point_checkboxes;
   vector<QLabel*> mp_diff_cubic_labels;
   vector<QLabel*> mp_diff_hermite_labels;
@@ -130,32 +132,26 @@ private:
 
   import_points_t* m_points_importer;
 
-  std::array<interpolation_t, interpolation_type_t::it_count> m_interpolation_data;
-
   void create_chart();
+
   void create_control(const vector<double>& a_x);
-  void create_control_test(const vector<double>& a_x);
   input_data_error_t verify_data(const vector<double>& a_x, const vector<double>& a_y);
   void calc_splines(const vector<double> &a_correct_points);
-  double get_diff(double a_real, double a_calculated);
-  void calc_difs();
+  double deviation(double a_real, double a_calculated);
+  void calc_deviations();
   void draw_lines(double a_min, double a_max, double a_step);
-  double calc_chart_tick_interval(double a_min, double a_max,
-    size_t a_ticks_count);
+  double calc_chart_tick_interval(double a_min, double a_max, size_t a_ticks_count);
 
-  void fill_cubic(vector<double>& a_x, vector<double>& a_y, double a_min,
-    double a_max, double a_step);
-  void fill_hermite(vector<double>& a_x, vector<double>& a_y,
-    double a_min, double a_max, double a_step);
+  void fill_cubic(vector<double>& a_x, vector<double>& a_y, double a_min, double a_max, double a_step);
+  void fill_hermite(vector<double>& a_x, vector<double>& a_y, double a_min, double a_max, double a_step);
   void fill_linear(vector<double>& a_x, vector<double>& a_y);
   void draw_line(const vector<double>& a_x, const vector<double> &a_y,
     QLineSeries* a_series);
 
   void repaint_spline();
-  void reinit_control_buttons();
 
-  void repaint_spline_test();
-  void reinit_control_buttons_test();
+  void reset_deviation_layouts();
+  void reinit_control_buttons();
 
   void keyPressEvent(QKeyEvent *a_event);
   void mouseDoubleClickEvent(QMouseEvent *event);

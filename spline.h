@@ -94,18 +94,16 @@ private:
 
 public:
     // set default boundary condition to be zero curvature at both ends
-    spline(): m_left(second_deriv), m_right(second_deriv),
-        m_left_value(0.0), m_right_value(0.0),
-        m_force_linear_extrapolation(false)
-    {
-    }
+    spline();
+    virtual ~spline() override;
+    virtual void set_points(const double* a_x, const double* a_y, size_t a_size) override;
+    virtual double operator() (double x) override;
+
 
     // optional, but if called it has to come be before set_points()
     void set_boundary(bd_type left, double left_value,
                       bd_type right, double right_value,
                       bool force_linear_extrapolation=false);
-    virtual void set_points(const double* a_x, const double* a_y, size_t a_size) override;
-    virtual double operator() (double x) override ;
     double deriv(int order, double x) const;
 };
 
