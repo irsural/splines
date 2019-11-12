@@ -174,17 +174,17 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="checkBox_4">
+         <widget class="QCheckBox" name="draw_linear_checkbox">
           <property name="text">
            <string>Линейная интерполяция</string>
           </property>
           <property name="checked">
-           <bool>true</bool>
+           <bool>false</bool>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="checkBox_5">
+         <widget class="QCheckBox" name="draw_cubic_checkbox">
           <property name="text">
            <string>Кубич. интерполяция</string>
           </property>
@@ -194,7 +194,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="checkBox_6">
+         <widget class="QCheckBox" name="draw_hermite_checkbox">
           <property name="text">
            <string>Эрмитова интерполяция</string>
           </property>
@@ -254,7 +254,7 @@
            <number>4</number>
           </property>
           <property name="singleStep">
-           <double>0.001000000000000</double>
+           <double>0.000000000000000</double>
           </property>
           <property name="value">
            <double>0.010000000000000</double>

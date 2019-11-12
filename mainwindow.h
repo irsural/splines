@@ -48,13 +48,13 @@ private slots:
   void on_checkBox_stateChanged(int a_state);
   void on_checkBox_2_stateChanged(int a_state);
   void on_checkBox_3_stateChanged(int a_state);
-  void on_checkBox_4_stateChanged(int a_state);
-  void on_checkBox_5_stateChanged(int a_state);
-  void on_checkBox_6_stateChanged(int a_state);
   void update_points(vector<double> &a_x, vector<double> &a_y);
   void on_button_apply_clicked();
-
   void chart_was_zoomed(qreal min, qreal max);
+  void on_spinbox_mark_limit_valueChanged(double arg1);
+  void on_draw_linear_checkbox_stateChanged(int arg1);
+  void on_draw_cubic_checkbox_stateChanged(int arg1);
+  void on_draw_hermite_checkbox_stateChanged(int arg1);
 
 private:
   enum class input_data_error_t {
@@ -73,10 +73,18 @@ private:
   };
 
   struct interpolation_t {
-    interpolation_base_t *interpolation;
+    interpolation_base_t &interpolation;
     QLineSeries* series;
     vector<QLabel*> deviation_labels;
     bool draw;
+
+    interpolation_t(interpolation_base_t &a_interpolation, QLineSeries *a_series):
+      interpolation(a_interpolation),
+      series(a_series),
+      deviation_labels(),
+      draw(false)
+    {
+    }
   };
 
 
@@ -91,11 +99,9 @@ private:
   pchip_t<double> m_hermite_spline;
   irs::line_interp_t<double> m_linear_interpolation;
 
-  std::array<interpolation_t, interpolation_type_t::it_count> m_interpolation_data;
+  vector<interpolation_t*> m_interpolation_data;
 
-  QLineSeries* mp_linear_data;
-  QLineSeries* mp_cubic_data;
-  QLineSeries* mp_hermite_data;
+  QLineSeries *m_data_series;
 
   QValueAxis *mp_axisX;
   double m_min_x;
@@ -108,21 +114,15 @@ private:
   bool m_auto_step;
   bool m_auto_scale;
 
-  bool m_draw_linear;
-  bool m_draw_cubic;
-  bool m_draw_hermite;
-
   vector<QHBoxLayout*> mp_deviation_layouts;
   vector<QCheckBox*> mp_point_checkboxes;
-  vector<QLabel*> mp_diff_cubic_labels;
-  vector<QLabel*> mp_diff_hermite_labels;
-  vector<QLabel*> mp_diff_linear_labels;
 
   QPalette m_better_color;
   QPalette m_worst_color;
   QPalette m_limit_color;
   QPalette m_default_color;
 
+  double m_mark_limit;
   bool m_draw_relative_points;
   size_t m_tick_interval_count;
 
@@ -142,12 +142,8 @@ private:
   void draw_lines(double a_min, double a_max, double a_step);
   double calc_chart_tick_interval(double a_min, double a_max, size_t a_ticks_count);
 
-  void fill_cubic(vector<double>& a_x, vector<double>& a_y, double a_min, double a_max, double a_step);
-  void fill_hermite(vector<double>& a_x, vector<double>& a_y, double a_min, double a_max, double a_step);
-  void fill_linear(vector<double>& a_x, vector<double>& a_y);
-  void draw_line(const vector<double>& a_x, const vector<double> &a_y,
-    QLineSeries* a_series);
 
+  void repaint_data_line();
   void repaint_spline();
 
   void reset_deviation_layouts();
