@@ -51,20 +51,27 @@ private slots:
   void on_checkBox_4_stateChanged(int a_state);
   void on_checkBox_5_stateChanged(int a_state);
   void on_checkBox_6_stateChanged(int a_state);
-  void update_points(vector<double> a_x, vector<double> a_y,
-    vector<double> a_correct_points);
+  void update_points(vector<double> &a_x, vector<double> &a_y);
   void on_show_all_graps_button_clicked();
   void on_button_apply_ticks_count_clicked();
 
   void chart_was_zoomed(qreal min, qreal max);
 
 private:
+  enum class input_data_error_t {
+    none,
+    no_data,
+    not_enough_points,
+    not_increasing_sequence,
+    arrays_not_same_size
+  };
+
   Ui::MainWindow *ui;
 
-  vector<double> m_freq;
-  vector<double> m_current;
+  vector<double> m_x;
+  vector<double> m_y;
   vector<double> m_correct_points;
-  std::map<double,double> m_points;
+  std::map<double,double> m_points_map;
 
   ::tk::spline m_cubic_spline;
   pchip_t<double> m_hermite_spline;
@@ -110,7 +117,8 @@ private:
 
   void create_chart();
   void create_control(const vector<double>& a_x);
-  void calc_splines(vector<double> &a_points);
+  input_data_error_t verify_data(const vector<double>& a_x, const vector<double>& a_y);
+  void calc_splines(const vector<double> &a_correct_points);
   void calc_difs();
   void draw_lines(double a_min, double a_max, double a_step);
   double calc_chart_tick_interval(double a_min, double a_max,

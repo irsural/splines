@@ -10,10 +10,10 @@
 MainWindow::MainWindow(QWidget *parent) :
   QMainWindow(parent),
   ui(new Ui::MainWindow),
-  m_freq(),
-  m_current(),
+  m_x(),
+  m_y(),
   m_correct_points { 40, 47, 70, 120, 300, 1000, 1400, 2000 },
-  m_points(),
+  m_points_map(),
   m_cubic_spline(),
   m_hermite_spline(),
   m_linear_interpolation(),
@@ -32,11 +32,11 @@ MainWindow::MainWindow(QWidget *parent) :
   m_draw_linear(true),
   m_draw_cubic(false),
   m_draw_hermite(true),
-  mp_layouts(m_freq.size()),
-  mp_point_checkboxes(m_freq.size()),
-  mp_diff_cubic_labels(m_freq.size()),
-  mp_diff_hermite_labels(m_freq.size()),
-  mp_diff_linear_labels(m_freq.size()),
+  mp_layouts(m_x.size()),
+  mp_point_checkboxes(m_x.size()),
+  mp_diff_cubic_labels(m_x.size()),
+  mp_diff_hermite_labels(m_x.size()),
+  mp_diff_linear_labels(m_x.size()),
   m_better_color(QPalette::Window, QColor(0xbfffbd)),
   m_worst_color(QPalette::Window, QColor(0xfaa88e)),
   m_limit_color(QPalette::Window, QColor(0xffe9d1)),
@@ -45,7 +45,7 @@ MainWindow::MainWindow(QWidget *parent) :
   m_start_zoom(),
   m_zoom_stack(),
   m_save_zoom(false),
-  m_points_importer(new import_points_t(this))
+  m_points_importer(new import_points_t(m_correct_points, this))
 {
   ui->setupUi(this);
 
@@ -56,8 +56,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
   m_cubic_spline.set_boundary(tk::spline::second_deriv, 0,
     tk::spline::second_deriv, 0, false);
-
-  m_points_importer->set_correct_points(m_correct_points);
 }
 
 MainWindow::~MainWindow()
@@ -114,7 +112,6 @@ void MainWindow::create_control(const vector<double>& a_x)
     connect(mp_point_checkboxes[row_ind], &QCheckBox::clicked, this,
       &MainWindow::redraw_spline);
 
-
     mp_diff_cubic_labels[row_ind] = new QLabel("0.00000", this);
     mp_diff_cubic_labels[row_ind]->setAutoFillBackground(true);
     mp_layouts[row_ind]->addWidget(mp_diff_cubic_labels[row_ind]);
@@ -132,30 +129,26 @@ void MainWindow::create_control(const vector<double>& a_x)
 }
 
 
-void MainWindow::calc_splines(vector<double> &a_points)
+void MainWindow::calc_splines(const vector<double> &a_correct_points)
 {
-  assert(m_freq.size() == m_current.size());
+  assert(m_x.size() == m_y.size());
+  m_points_map.clear();
 
-  m_points.clear();
-  for (size_t i = 0; i < m_freq.size(); i++) {
-    m_points[m_freq[i]] = m_current[i];
+  for (size_t i = 0; i < m_x.size(); i++) {
+    m_points_map[m_x[i]] = m_y[i];
   }
 
   vector<double> correct_values;
-  for (auto point: a_points) {
-    auto value = m_points.find(point);
-    if (value != m_points.end()) {
+  for (auto point: a_correct_points) {
+    auto value = m_points_map.find(point);
+    if (value != m_points_map.end()) {
       correct_values.push_back(value->second);
     }
   }
 
-  m_cubic_spline.set_points(a_points, correct_values);
-  m_hermite_spline.set_points(a_points.data(),
-    correct_values.data(), int(a_points.size()));
-
-  m_linear_interpolation.clear();
-  m_linear_interpolation.assign(a_points.data(), correct_values.data(),
-    int(a_points.size()));
+  m_cubic_spline.set_points(a_correct_points, correct_values);
+  m_hermite_spline.set_points(a_correct_points.data(), correct_values.data(), a_correct_points.size());
+  m_linear_interpolation.set_points(a_correct_points.data(), correct_values.data(), a_correct_points.size());
 
   calc_difs();
 }
@@ -170,7 +163,7 @@ void MainWindow::calc_difs()
   double worst_linear_val = 0;
 
   size_t label_ind = 0;
-  for (auto a_pair: m_points) {
+  for (auto a_pair: m_points_map) {
     double real_value = a_pair.second;
 
     double cubic_value = m_cubic_spline(a_pair.first);
@@ -237,7 +230,7 @@ void MainWindow::draw_lines(double a_min, double a_max, double a_step)
   m_min_y = std::numeric_limits<double>::max();
   m_max_y = std::numeric_limits<double>::min();
 
-  double relative_point = m_points[m_correct_points[0]] / m_correct_points[0];
+  double relative_point = m_points_map[m_correct_points[0]] / m_correct_points[0];
 
   for (double i = a_min; i < a_max; i += a_step) {
     double cubic_val = m_cubic_spline(i);
@@ -259,15 +252,15 @@ void MainWindow::draw_lines(double a_min, double a_max, double a_step)
     }
   }
 
-  for (size_t i = 0; i < m_freq.size(); i++) {
-    double value = m_current[i];
+  for (size_t i = 0; i < m_x.size(); i++) {
+    double value = m_y[i];
     if (m_draw_relative_points) {
-      value = (value/m_freq[i] - relative_point) * 100;
+      value = (value/m_x[i] - relative_point) * 100;
     }
     if (m_draw_linear) {
       m_min_y = m_min_y > value ? value : m_min_y;
       m_max_y = m_max_y < value ? value : m_max_y;
-      mp_linear_data->append(m_freq[i], value);
+      mp_linear_data->append(m_x[i], value);
     }
   }
 
@@ -345,7 +338,7 @@ void MainWindow::fill_cubic(vector<double> &a_x, vector<double> &a_y,
   a_x.reserve(points_count);
   a_y.reserve(points_count);
 
-  double relative_point = m_points[m_correct_points[0]] / m_correct_points[0];
+  double relative_point = m_points_map[m_correct_points[0]] / m_correct_points[0];
 
   for (double i = a_min; i < a_max; i += a_step) {
     double cubic_val = m_cubic_spline(i);
@@ -367,7 +360,7 @@ void MainWindow::fill_hermite(vector<double>& a_x, vector<double>& a_y,
   a_x.reserve(points_count);
   a_y.reserve(points_count);
 
-  double relative_point = m_points[m_correct_points[0]] / m_correct_points[0];
+  double relative_point = m_points_map[m_correct_points[0]] / m_correct_points[0];
 
   for (double i = a_min; i < a_max; i += a_step) {
     double hermite_val = m_hermite_spline(i);
@@ -384,17 +377,17 @@ void MainWindow::fill_linear(vector<double>& a_x, vector<double>& a_y)
 {
   a_x.clear();
   a_y.clear();
-  a_x.reserve(m_freq.size());
-  a_y.reserve(m_freq.size());
+  a_x.reserve(m_x.size());
+  a_y.reserve(m_x.size());
 
-  double relative_point = m_points[m_correct_points[0]] / m_correct_points[0];
+  double relative_point = m_points_map[m_correct_points[0]] / m_correct_points[0];
 
-  for (size_t i = 0; i < m_freq.size(); i++) {
-    double value = m_current[i];
+  for (size_t i = 0; i < m_x.size(); i++) {
+    double value = m_y[i];
     if (m_draw_relative_points) {
-      value = (value/m_freq[i] - relative_point) * 100;
+      value = (value/m_x[i] - relative_point) * 100;
     }
-    a_x.push_back(m_freq[i]);
+    a_x.push_back(m_x[i]);
     a_y.push_back(value);
   }
 }
@@ -445,7 +438,6 @@ void MainWindow::redraw_spline(bool a_checked)
       pressed_cb->setChecked(true);
     }
   }
-  m_points_importer->set_correct_points(m_correct_points);
   repaint_spline();
 }
 
@@ -459,41 +451,76 @@ void MainWindow::reinit_control_buttons()
     if (mp_diff_linear_labels[i] != nullptr) delete mp_diff_linear_labels[i];
   }
 
-  m_min_x = m_freq[0];
-  m_max_x = m_freq[m_freq.size() - 1];
+  m_min_x = m_x.front();
+  m_max_x = m_x.back();
   m_min_y = std::numeric_limits<double>::max();
   m_max_y = std::numeric_limits<double>::min();
-  m_x_step = m_auto_step ? (m_freq[m_freq.size() - 1] - m_freq[0]) / 400 : m_x_step;
-  mp_layouts.resize(m_freq.size());
-  mp_point_checkboxes.resize(m_freq.size());
-  mp_diff_cubic_labels.resize(m_freq.size());
-  mp_diff_hermite_labels.resize(m_freq.size());
-  mp_diff_linear_labels.resize(m_freq.size());
+  m_x_step = m_auto_step ? (m_x.back() - m_x.front()) / 400 : m_x_step;
+  mp_layouts.resize(m_x.size());
+  mp_point_checkboxes.resize(m_x.size());
+  mp_diff_cubic_labels.resize(m_x.size());
+  mp_diff_hermite_labels.resize(m_x.size());
+  mp_diff_linear_labels.resize(m_x.size());
 
   ui->xmin_spinbox->setValue(m_min_x);
   ui->xmax_spinbox->setValue(m_max_x);
   ui->xstep_spinbox->setValue(m_x_step);
 
-  create_control(m_freq);
+  create_control(m_x);
 }
 
-void MainWindow::update_points(vector<double> a_x, vector<double> a_y,
-  vector<double> a_correct_points)
+MainWindow::input_data_error_t MainWindow::verify_data(const vector<double>& a_x, const vector<double>& a_y)
 {
-  m_freq = std::move(a_x);
-  m_current = std::move(a_y);
-  m_correct_points = std::move(a_correct_points);
+  if (a_x.empty() || a_y.empty()) {
+    return input_data_error_t::no_data;
+  }
+  if (a_x.size() != a_y.size()) {
+    return input_data_error_t::arrays_not_same_size;
+  }
+  if (a_x.size() < 2) {
+    return input_data_error_t::not_enough_points;
+  }
+  for(size_t i = 1; i < a_x.size(); i++) {
+    if (a_x[i] <= a_x[i-1]) {
+      return input_data_error_t::not_increasing_sequence;
+    }
+  }
+  return input_data_error_t::none;
+}
 
-  reinit_control_buttons();
-  repaint_spline();
+void MainWindow::update_points(vector<double> &a_x, vector<double> &a_y)
+{
+  input_data_error_t error = verify_data(a_x, a_y);
 
-  double current_x = m_points_importer->get_next_data(import_points_t::move_direction_t::none);
-  ui->current_x_label->setText(QString::number(current_x));
+  switch(error) {
+    case input_data_error_t::none: {
+      m_x = std::move(a_x);
+      m_y = std::move(a_y);
+
+      reinit_control_buttons();
+      repaint_spline();
+
+      double current_x = m_points_importer->get_next_data(import_points_t::move_direction_t::none);
+      ui->current_x_label->setText(QString::number(current_x));
+    } break;
+    case input_data_error_t::no_data: {
+      QMessageBox::critical(this, "Error", "X or Y array is empty");
+    } break;
+    case input_data_error_t::arrays_not_same_size: {
+      QMessageBox::critical(this, "Error", "X and Y arrays must be same size");
+    } break;
+    case input_data_error_t::not_enough_points: {
+      QMessageBox::critical(this, "Error", "Not enough points to calculate spline");
+    } break;
+    case input_data_error_t::not_increasing_sequence: {
+      QMessageBox::critical(this, "Error", "X array must be strictly increasing sequence ");
+    } break;
+  }
 }
 
 void MainWindow::repaint_spline()
 {
-  if (m_freq.size()) {
+  if (!m_x.empty()) {
     m_save_zoom = false;
     calc_splines(m_correct_points);
     draw_lines(m_min_x, m_max_x, m_x_step);

@@ -2,10 +2,10 @@
 
 #include <QDebug>
 
-import_points_t::import_points_t(QObject *parent) :
+import_points_t::import_points_t(std::vector<double> &a_correct_points, QObject *parent) :
   QObject(parent),
   m_last_file_name(""),
-  m_correct_points(),
+  m_correct_points(a_correct_points),
   m_csv_model(new QStandardItemModel(this)),
   mp_import_dialog(),
   m_selected(import_points_dialog_t::select_t::none),
@@ -20,21 +20,12 @@ void import_points_t::create_import_points_dialog(QWidget* a_parent)
   import_points_dialog_t* import_points_win = new import_points_dialog_t(
     m_correct_points, m_csv_model, m_last_file_name, a_parent);
 
-  connect(import_points_win, &import_points_dialog_t::selection_done, this,
-    &import_points_t::fill_data_arrays);
-  connect(import_points_win, &import_points_dialog_t::filename_changed, this,
-    &import_points_t::update_filename);
-  connect(import_points_win, &import_points_dialog_t::selected_col_changed, this,
-    &import_points_t::set_new_col);
-  connect(import_points_win, &import_points_dialog_t::selected_row_changed, this,
-    &import_points_t::set_new_row);
+  connect(import_points_win, &import_points_dialog_t::selection_done, this, &import_points_t::fill_data_arrays);
+  connect(import_points_win, &import_points_dialog_t::filename_changed, this, &import_points_t::update_filename);
+  connect(import_points_win, &import_points_dialog_t::selected_col_changed, this, &import_points_t::set_new_col);
+  connect(import_points_win, &import_points_dialog_t::selected_row_changed, this, &import_points_t::set_new_row);
 
   import_points_win->exec();
-}
-
-void import_points_t::set_correct_points(const std::vector<double>& a_correct_points)
-{
-  m_correct_points = a_correct_points;
 }
 
 void import_points_t::update_filename(const QString& a_filename)
@@ -108,8 +99,7 @@ void import_points_t::fill_data_arrays(std::vector<double> a_correct_points)
   if (m_correct_points.size() < 2 || !correct_points_are_valid) {
     m_correct_points = { x.front(), x.back() };
   }
-
-  emit points_are_ready(x, y, m_correct_points);
+  emit points_are_ready(x, y);
 }
 
 double import_points_t::get_next_data(move_direction_t a_direction)

@@ -11,15 +11,14 @@ class import_points_t : public QObject
 public:
   enum class move_direction_t { up, down, left, right, none };
 
-  explicit import_points_t(QObject *parent = nullptr);
+  explicit import_points_t(std::vector<double>& a_correct_points, QObject *parent = nullptr);
 
   void create_import_points_dialog(QWidget *a_parent);
   void set_correct_points(const std::vector<double>& a_correct_points);
   double get_next_data(move_direction_t a_direction);
 
 signals:
-  void points_are_ready(std::vector<double> a_x, std::vector<double> a_y,
-    std::vector<double> a_correct_points);
+  void points_are_ready(std::vector<double> &a_x, std::vector<double> &a_y);
 
 private slots:
   void update_filename(const QString &a_filename);
@@ -29,7 +28,7 @@ private slots:
 
 private:
   QString m_last_file_name;
-  std::vector<double> m_correct_points;
+  std::vector<double> &m_correct_points;
   QStandardItemModel *m_csv_model;
 
   import_points_dialog_t* mp_import_dialog;

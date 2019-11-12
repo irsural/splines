@@ -14,10 +14,10 @@ public:
     ~pchip_t();
     pchip_t();
 
-    void set_points(T* a_x, T* a_y, int a_length);
+    void set_points(const T *a_x, const T *a_y, size_t a_length);
     T operator()(T a_x);
 private:
-    int m_nodes_count;
+    size_t m_nodes_count;
     vector<T> m_x;
     vector<T> m_y;
     vector<T> m_derivatives;
@@ -47,10 +47,10 @@ pchip_t<T>::~pchip_t()
 }
 
 template <class T>
-void pchip_t<T>::set_points(T* a_x, T* a_y, int a_length)
+void pchip_t<T>::set_points(const T* a_x, const T* a_y, size_t a_length)
 {
   assert(a_length >= 2);
-  for (int i = 1; i < a_length; i++) {
+  for (size_t i = 1; i < a_length; i++) {
     assert(a_x[i] >= a_x[i - 1]);
   }
 
@@ -171,7 +171,7 @@ void pchip_t<T>::spline_pchip_set()
       }
     }
   }
-  for (int i = 0; i < m_nodes_count - 1; i++) {
+  for (size_t i = 0; i < m_nodes_count - 1; i++) {
 //  Коэффициенты для рассчета полинома
     T h = m_x[i+1] - m_x[i];
     T delta = (m_y[i+1] - m_y[i]) / h;
@@ -193,7 +193,7 @@ T pchip_t<T>::operator()(T a_x)
   } else if (a_x >= m_x[m_nodes_count - 1]) {
     interval_num = m_nodes_count - 2;
   } else {
-    for (int i = 1; i < m_nodes_count; i++) {
+    for (size_t i = 1; i < m_nodes_count; i++) {
       if (m_x[i] > a_x) {
         interval_num = i - 1;
         break;
