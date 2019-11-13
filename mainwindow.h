@@ -20,7 +20,7 @@
 #include "hermit.h"
 #include "import_points.h"
 #include "linear_interpolation.hpp"
-#include "worst_searcher.h"
+#include "peak_searcher.h"
 
 using namespace std;
 

@@ -217,7 +217,7 @@
         <item>
          <widget class="QLabel" name="label_5">
           <property name="text">
-           <string>Текущая частота/амплитуда:</string>
+           <string>Текущий X:</string>
           </property>
          </widget>
         </item>

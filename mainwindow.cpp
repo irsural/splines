@@ -137,7 +137,7 @@ double MainWindow::deviation(double a_real, double a_calculated)
 
 void MainWindow::calc_deviations()
 {
-  peak_searcher_t<double, std::less<double>> best_interpolation;
+//  peak_searcher_t<double, std::less<double>> best_interpolation;
   for (auto& interp_data: m_interpolation_data) {
     interp_data->worst_point.clear();
   }
@@ -146,7 +146,7 @@ void MainWindow::calc_deviations()
   for (auto &a_pair: m_points_map) {
     double real_value = a_pair.second;
 
-    best_interpolation.clear();
+//    best_interpolation.clear();
 
     for (auto& interp_data: m_interpolation_data) {
       double interp_value = interp_data->interpolation(a_pair.first);
@@ -156,14 +156,16 @@ void MainWindow::calc_deviations()
 
       double pos_interp_deviation = abs(interp_deviation);
 
-      best_interpolation.add(pos_interp_deviation);
+//      best_interpolation.add(pos_interp_deviation);
       interp_data->worst_point.add(pos_interp_deviation);
 
       if (pos_interp_deviation > m_mark_limit) {
         interp_data->deviation_labels[point_number]->setPalette(m_limit_color);
       }
     }
-    m_interpolation_data[best_interpolation.get_index()]->deviation_labels[point_number]->setPalette(m_best_color);
+
+//    m_interpolation_data[best_interpolation.get_index()]->deviation_labels[point_number]->setPalette(m_best_color);
+
     point_number++;
   }
   for (auto& interp_data: m_interpolation_data) {
@@ -512,7 +514,7 @@ void MainWindow::mouseDoubleClickEvent(QMouseEvent *a_event)
 
 void MainWindow::set_new_zoom_start()
 {
-  m_start_zoom = {m_min_x, m_max_x, m_min_y, m_max_y};
+  m_start_zoom = { m_min_x, m_max_x, m_min_y, m_max_y };
   while(!m_zoom_stack.empty()) m_zoom_stack.pop();
   m_zoom_stack.push(m_start_zoom);
   m_save_zoom = true;
