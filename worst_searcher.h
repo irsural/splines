@@ -2,17 +2,18 @@
 #define WORST_SEARCHER_H
 
 #include <limits>
+#include <functional>
 
-template<typename T>
-class worst_searcher_t
+template<typename T, typename Compare = std::greater<T>>
+class peak_searcher_t
 {
 private:
   T m_current_worst;
   T m_current_worst_index;
   std::size_t m_index;
 public:
-  worst_searcher_t() :
-    m_current_worst(std::numeric_limits<T>::min()),
+  peak_searcher_t() :
+    m_current_worst(0),
     m_current_worst_index(0),
     m_index(0)
   {}
@@ -22,32 +23,34 @@ public:
   void clear();
 };
 
-template<typename T>
-void worst_searcher_t<T>::add(T a_value)
+template<typename T, typename Compare>
+void peak_searcher_t<T, Compare>::add(T a_value)
 {
-  if (a_value > m_current_worst) {
+  if (m_index == 0) {
+    m_current_worst = a_value;
+  } else if (Compare()(a_value, m_current_worst)) {
     m_current_worst =  a_value;
     m_current_worst_index = m_index;
   }
   m_index++;
 }
 
-template<typename T>
-T worst_searcher_t<T>::get()
+template<typename T, typename Compare>
+T peak_searcher_t<T, Compare>::get()
 {
   return m_current_worst;
 }
 
-template<typename T>
-std::size_t worst_searcher_t<T>::get_index()
+template<typename T, typename Compare>
+std::size_t peak_searcher_t<T, Compare>::get_index()
 {
   return m_current_worst_index;
 }
 
-template<typename T>
-void worst_searcher_t<T>::clear()
+template<typename T, typename Compare>
+void peak_searcher_t<T, Compare>::clear()
 {
-  m_current_worst = std::numeric_limits<T>::min();
+  m_current_worst = 0;
   m_current_worst_index = 0;
   m_index = 0;
 }

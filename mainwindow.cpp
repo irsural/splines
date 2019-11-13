@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "worst_searcher.h"
+
 
 #include <cmath>
 #include <limits>
@@ -31,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent) :
   m_auto_scale(true),
   mp_deviation_layouts(m_x.size()),
   mp_point_checkboxes(m_x.size()),
-  m_better_color(QPalette::Window, QColor(0xbfffbd)),
+  m_best_color(QPalette::Window, QColor(0xbfffbd)),
   m_worst_color(QPalette::Window, QColor(0xfaa88e)),
   m_limit_color(QPalette::Window, QColor(0xffe9d1)),
   m_default_color(),
@@ -47,9 +47,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
   m_interpolation_data.reserve(it_count);
   //Порядок интерполяций должен соответствовать enum interpolation_type_t
-  m_interpolation_data.push_back(new interpolation_t(m_cubic_spline, new QLineSeries(this)));
-  m_interpolation_data.push_back(new interpolation_t(m_hermite_spline, new QLineSeries(this)));
-  m_interpolation_data.push_back(new interpolation_t(m_linear_interpolation, new QLineSeries(this)));
+  m_interpolation_data.emplace_back(new interpolation_t(m_cubic_spline, new QLineSeries(this)));
+  m_interpolation_data.emplace_back(new interpolation_t(m_hermite_spline, new QLineSeries(this)));
+  m_interpolation_data.emplace_back(new interpolation_t(m_linear_interpolation, new QLineSeries(this)));
 
   create_chart();
   connect(m_points_importer, &import_points_t::points_are_ready, this, &MainWindow::update_points);
@@ -137,10 +137,16 @@ double MainWindow::deviation(double a_real, double a_calculated)
 
 void MainWindow::calc_deviations()
 {
-//  vector<worst_searcher_t<double>> worst_searcher(m_interpolation_data.size());
+  peak_searcher_t<double, std::less<double>> best_interpolation;
+  for (auto& interp_data: m_interpolation_data) {
+    interp_data->worst_point.clear();
+  }
+
   size_t point_number = 0;
   for (auto &a_pair: m_points_map) {
     double real_value = a_pair.second;
+
+    best_interpolation.clear();
 
     for (auto& interp_data: m_interpolation_data) {
       double interp_value = interp_data->interpolation(a_pair.first);
@@ -148,69 +154,22 @@ void MainWindow::calc_deviations()
       interp_data->deviation_labels[point_number]->setText(QString::number(interp_deviation));
       interp_data->deviation_labels[point_number]->setPalette(m_default_color);
 
-      if (abs(interp_deviation) > m_mark_limit) {
+      double pos_interp_deviation = abs(interp_deviation);
+
+      best_interpolation.add(pos_interp_deviation);
+      interp_data->worst_point.add(pos_interp_deviation);
+
+      if (pos_interp_deviation > m_mark_limit) {
         interp_data->deviation_labels[point_number]->setPalette(m_limit_color);
       }
     }
+    m_interpolation_data[best_interpolation.get_index()]->deviation_labels[point_number]->setPalette(m_best_color);
     point_number++;
   }
+  for (auto& interp_data: m_interpolation_data) {
+    interp_data->deviation_labels[interp_data->worst_point.get_index()]->setPalette(m_worst_color);
+  }
 }
-
-//void MainWindow::calc_deviations()
-//{
-//  worst_searcher_t<double> worst_cubic;
-//  worst_searcher_t<double> worst_hermite;
-//  worst_searcher_t<double> worst_linear;
-
-//  size_t label_ind = 0;
-//  for (auto a_pair: m_points_map) {
-//    double real_value = a_pair.second;
-
-//    double cubic_value = m_cubic_spline(a_pair.first);
-//    double cubic_diff = deviation(real_value, cubic_value);
-//    worst_cubic.add(abs(cubic_diff));
-//    mp_diff_cubic_labels[label_ind]->setText(QString::number(cubic_diff));
-//    mp_diff_cubic_labels[label_ind]->setPalette(m_default_color);
-
-//    double hermite_value = m_hermite_spline(a_pair.first);
-//    double hermite_diff = deviation(real_value, hermite_value);
-//    worst_hermite.add(abs(hermite_diff));
-//    mp_diff_hermite_labels[label_ind]->setText(QString::number(hermite_diff));
-//    mp_diff_hermite_labels[label_ind]->setPalette(m_default_color);
-
-//    double linear_value = m_linear_interpolation(a_pair.first);
-//    double linear_diff = deviation(real_value, linear_value);
-//    worst_linear.add(abs(linear_diff));
-//    mp_diff_linear_labels[label_ind]->setText(QString::number(linear_diff));
-//    mp_diff_linear_labels[label_ind]->setPalette(m_default_color);
-
-
-//    if (abs(cubic_diff) < abs(hermite_diff)) {
-//      mp_diff_cubic_labels[label_ind]->setPalette(m_better_color);
-//    } else if (abs(cubic_diff) > abs(hermite_diff)) {
-//      mp_diff_hermite_labels[label_ind]->setPalette(m_better_color);
-//    }
-
-
-//    label_ind++;
-//  }
-//  mp_diff_cubic_labels[worst_cubic.get_index()]->setPalette(m_worst_color);
-//  mp_diff_hermite_labels[worst_hermite.get_index()]->setPalette(m_worst_color);
-//  mp_diff_linear_labels[worst_linear.get_index()]->setPalette(m_worst_color);
-//}
-
-
-//  double relative_point = m_points_map[m_correct_points[0]] / m_correct_points[0];
-
-//  for (double i = a_min; i < a_max; i += a_step) {
-//    double cubic_val = m_cubic_spline(i);
-//    double hermite_val = m_hermite_spline(i);
-
-//    if (m_draw_relative_points) {
-//      cubic_val = (cubic_val/i - relative_point) * 100;
-//      hermite_val = (hermite_val/i - relative_point) * 100;
-//    }
-
 
 void MainWindow::draw_lines(double a_min, double a_max, double a_step)
 {
@@ -229,7 +188,7 @@ void MainWindow::draw_lines(double a_min, double a_max, double a_step)
       for (double x = a_min; x < a_max; x += a_step) {
         double interpolation_value = interp->interpolation(x);
         if (m_draw_relative_points) {
-          interpolation_value = (interpolation_value / x - m_y.front() / m_x.front()) * 100;// / ;// / m_y.front();
+          interpolation_value = (interpolation_value / x - m_y.front() / m_x.front()) * 100;
         }
         m_min_y = m_min_y > interpolation_value ? interpolation_value : m_min_y;
         m_max_y = m_max_y < interpolation_value ? interpolation_value : m_max_y;
@@ -324,8 +283,6 @@ MainWindow::input_data_error_t MainWindow::verify_data(const vector<double>& a_x
   }
   return input_data_error_t::none;
 }
-
-
 
 void MainWindow::create_control(const vector<double>& a_x)
 {
@@ -524,8 +481,7 @@ void MainWindow::chart_was_zoomed(qreal a_min, qreal a_max)
   if (zoomed_axis == mp_axisY) {
     if (m_save_zoom) {
       //Коллбэк по Y всегда вызывается после коллбэка по X
-      m_zoom_stack.push(QRectF(mp_axisX->min(), mp_axisX->max(),
-        mp_axisY->min(), mp_axisY->max()));
+      m_zoom_stack.push(QRectF(mp_axisX->min(), mp_axisX->max(), mp_axisY->min(), mp_axisY->max()));
     }
   }
 }

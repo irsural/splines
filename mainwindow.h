@@ -13,13 +13,14 @@
 
 #include <limits>
 #include <cmath>
+#include <memory>
 #include <stack>
 
 #include "spline.h"
 #include "hermit.h"
 #include "import_points.h"
 #include "linear_interpolation.hpp"
-
+#include "worst_searcher.h"
 
 using namespace std;
 
@@ -76,17 +77,18 @@ private:
     interpolation_base_t &interpolation;
     QLineSeries* series;
     vector<QLabel*> deviation_labels;
+    peak_searcher_t<double> worst_point;
     bool draw;
 
     interpolation_t(interpolation_base_t &a_interpolation, QLineSeries *a_series):
       interpolation(a_interpolation),
       series(a_series),
       deviation_labels(),
+      worst_point(),
       draw(false)
     {
     }
   };
-
 
   Ui::MainWindow *ui;
 
@@ -98,8 +100,7 @@ private:
   ::tk::spline m_cubic_spline;
   pchip_t<double> m_hermite_spline;
   irs::line_interp_t<double> m_linear_interpolation;
-
-  vector<interpolation_t*> m_interpolation_data;
+  vector<std::unique_ptr<interpolation_t>> m_interpolation_data;
 
   QLineSeries *m_data_series;
 
@@ -117,7 +118,7 @@ private:
   vector<QHBoxLayout*> mp_deviation_layouts;
   vector<QCheckBox*> mp_point_checkboxes;
 
-  QPalette m_better_color;
+  QPalette m_best_color;
   QPalette m_worst_color;
   QPalette m_limit_color;
   QPalette m_default_color;
@@ -133,7 +134,6 @@ private:
   import_points_t* m_points_importer;
 
   void create_chart();
-
   void create_control(const vector<double>& a_x);
   input_data_error_t verify_data(const vector<double>& a_x, const vector<double>& a_y);
   void calc_splines(const vector<double> &a_correct_points);
@@ -141,7 +141,6 @@ private:
   void calc_deviations();
   void draw_lines(double a_min, double a_max, double a_step);
   double calc_chart_tick_interval(double a_min, double a_max, size_t a_ticks_count);
-
 
   void repaint_data_line();
   void repaint_spline();
