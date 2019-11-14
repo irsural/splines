@@ -172,7 +172,7 @@ void MainWindow::repaint_data_line()
   for (size_t i = 0; i < m_x.size(); i++) {
     double value = m_y[i];
     if (m_draw_relative_points) {
-      value = (value / m_x[i] - m_y.front() / m_x.front()) * 100;
+      value = value / m_x[i];
     }
     m_min_y = m_min_y > value ? value : m_min_y;
     m_max_y = m_max_y < value ? value : m_max_y;
@@ -204,7 +204,7 @@ void MainWindow::draw_lines(double a_min, double a_max, double a_step)
       for (double x = a_min; x < a_max; x += a_step) {
         double interpolation_value = interp->interpolation(x);
         if (m_draw_relative_points) {
-          interpolation_value = (interpolation_value / x - m_y.front() / m_x.front()) * 100;
+          interpolation_value = interpolation_value / x;
         }
         m_min_y = m_min_y > interpolation_value ? interpolation_value : m_min_y;
         m_max_y = m_max_y < interpolation_value ? interpolation_value : m_max_y;
