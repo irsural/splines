@@ -7,6 +7,7 @@
 #include <QCheckBox>
 #include <QLabel>
 #include <QFileDialog>
+#include <chrono>
 
 MainWindow::MainWindow(QWidget *parent) :
   QMainWindow(parent),
@@ -137,7 +138,6 @@ double MainWindow::deviation(double a_real, double a_calculated)
 
 void MainWindow::calc_deviations()
 {
-//  peak_searcher_t<double, std::less<double>> best_interpolation;
   for (auto& interp_data: m_interpolation_data) {
     interp_data->worst_point.clear();
   }
@@ -146,8 +146,6 @@ void MainWindow::calc_deviations()
   for (auto &a_pair: m_points_map) {
     double real_value = a_pair.second;
 
-//    best_interpolation.clear();
-
     for (auto& interp_data: m_interpolation_data) {
       double interp_value = interp_data->interpolation(a_pair.first);
       double interp_deviation = deviation(real_value, interp_value);
@@ -155,17 +153,12 @@ void MainWindow::calc_deviations()
       interp_data->deviation_labels[point_number]->setPalette(m_default_color);
 
       double pos_interp_deviation = abs(interp_deviation);
-
-//      best_interpolation.add(pos_interp_deviation);
       interp_data->worst_point.add(pos_interp_deviation);
 
       if (pos_interp_deviation > m_mark_limit) {
         interp_data->deviation_labels[point_number]->setPalette(m_limit_color);
       }
     }
-
-//    m_interpolation_data[best_interpolation.get_index()]->deviation_labels[point_number]->setPalette(m_best_color);
-
     point_number++;
   }
   for (auto& interp_data: m_interpolation_data) {
@@ -351,10 +344,6 @@ void MainWindow::reinit_control_buttons()
   m_max_y = std::numeric_limits<double>::min();
   m_x_step = m_auto_step ? (m_x.back() - m_x.front()) / 400 : m_x_step;
 
-  ui->xmin_spinbox->setValue(m_min_x);
-  ui->xmax_spinbox->setValue(m_max_x);
-  ui->xstep_spinbox->setValue(m_x_step);
-
   reset_deviation_layouts();
   create_control(m_x);
 }
@@ -381,6 +370,9 @@ void MainWindow::update_points(vector<double> &a_x, vector<double> &a_y)
       reinit_control_buttons();
       repaint_spline();
 
+      ui->xmin_spinbox->setValue(m_min_x);
+      ui->xmax_spinbox->setValue(m_max_x);
+      ui->xstep_spinbox->setValue(m_x_step);
       ui->current_x_label->setText(m_points_importer->get_x());
     } break;
     case input_data_error_t::no_data: {
@@ -398,17 +390,6 @@ void MainWindow::update_points(vector<double> &a_x, vector<double> &a_y)
   }
 }
 
-void MainWindow::on_xmin_spinbox_valueChanged(double a_val)
-{
-  m_min_x = a_val;
-  mp_axisX->setMin(m_min_x);
-}
-
-void MainWindow::on_xmax_spinbox_valueChanged(double a_val)
-{
-  m_max_x = a_val;
-  mp_axisX->setMax(m_max_x);
-}
 
 void MainWindow::on_reset_scale_clicked()
 {
@@ -420,33 +401,6 @@ void MainWindow::on_reset_scale_clicked()
   mp_axisY->setRange(m_min_y, m_max_y);
   repaint_spline();
   set_new_zoom_start();
-}
-
-void MainWindow::on_open_file_button_clicked()
-{
-  m_points_importer->create_import_points_dialog(this);
-}
-
-void MainWindow::on_xstep_spinbox_valueChanged(double a_val)
-{
-  m_x_step = a_val;
-}
-
-void MainWindow::on_checkBox_stateChanged(int a_state)
-{
-  m_draw_relative_points = a_state;
-  repaint_spline();
-}
-
-void MainWindow::on_checkBox_2_stateChanged(int a_state)
-{
-  m_auto_step = a_state;
-  repaint_spline();
-}
-
-void MainWindow::on_checkBox_3_stateChanged(int a_state)
-{
-  m_auto_scale = a_state;
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *a_event)
@@ -486,9 +440,7 @@ void MainWindow::chart_was_zoomed(qreal a_min, qreal a_max)
 
 void MainWindow::mouseDoubleClickEvent(QMouseEvent *a_event)
 {
-  if (ui->chart_layout->geometry().intersects(
-    QRect(a_event->pos(), QSize(1, 1))))
-  {
+  if (ui->chart_layout->geometry().intersects(QRect(a_event->pos(), QSize(1, 1)))) {
     if (!m_zoom_stack.empty()) {
       if (m_zoom_stack.top() != m_start_zoom) {
         m_zoom_stack.pop();
@@ -497,6 +449,7 @@ void MainWindow::mouseDoubleClickEvent(QMouseEvent *a_event)
 
         bool prev_auto_scale = m_auto_scale;
         m_auto_scale = false;
+        //Чтобы в chart_was_zoomed ничего не пушилось в m_zoom_stack
         m_save_zoom = false;
         mp_axisX->setRange(field.left(), field.top());
         mp_axisY->setRange(field.width(), field.height());
@@ -507,6 +460,46 @@ void MainWindow::mouseDoubleClickEvent(QMouseEvent *a_event)
     }
   }
 }
+
+void MainWindow::on_open_file_button_clicked()
+{
+  m_points_importer->create_import_points_dialog(this);
+}
+
+void MainWindow::on_xmin_spinbox_valueChanged(double a_val)
+{
+  m_min_x = a_val;
+  mp_axisX->setMin(m_min_x);
+}
+
+void MainWindow::on_xmax_spinbox_valueChanged(double a_val)
+{
+  m_max_x = a_val;
+  mp_axisX->setMax(m_max_x);
+}
+
+void MainWindow::on_xstep_spinbox_valueChanged(double a_val)
+{
+  m_x_step = a_val;
+}
+
+void MainWindow::on_checkBox_stateChanged(int a_state)
+{
+  m_draw_relative_points = a_state;
+  repaint_spline();
+}
+
+void MainWindow::on_checkBox_2_stateChanged(int a_state)
+{
+  m_auto_step = a_state;
+  repaint_spline();
+}
+
+void MainWindow::on_checkBox_3_stateChanged(int a_state)
+{
+  m_auto_scale = a_state;
+}
+
 
 void MainWindow::set_new_zoom_start()
 {
