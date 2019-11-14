@@ -78,14 +78,14 @@ private:
     QLineSeries* series;
     vector<QLabel*> deviation_labels;
     peak_searcher_t<double> worst_point;
-    bool draw;
+    bool enable;
 
     interpolation_t(interpolation_base_t &a_interpolation, QLineSeries *a_series):
       interpolation(a_interpolation),
       series(a_series),
       deviation_labels(),
       worst_point(),
-      draw(false)
+      enable(false)
     {
     }
   };

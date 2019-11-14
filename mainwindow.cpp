@@ -72,11 +72,11 @@ void MainWindow::create_chart()
 
   m_data_series->setName("Input data");
   m_interpolation_data[it_cubic]->series->setName("Cubic");
-  m_interpolation_data[it_cubic]->draw = ui->draw_cubic_checkbox->isChecked();
+  m_interpolation_data[it_cubic]->enable = ui->draw_cubic_checkbox->isChecked();
   m_interpolation_data[it_hermite]->series->setName("Hermite");
-  m_interpolation_data[it_hermite]->draw = ui->draw_hermite_checkbox->isChecked();
+  m_interpolation_data[it_hermite]->enable = ui->draw_hermite_checkbox->isChecked();
   m_interpolation_data[it_linear]->series->setName("Linear");
-  m_interpolation_data[it_linear]->draw = ui->draw_linear_checkbox->isChecked();
+  m_interpolation_data[it_linear]->enable = ui->draw_linear_checkbox->isChecked();
 
   chart->addSeries(m_data_series);
   m_data_series->attachAxis(mp_axisX);
@@ -147,22 +147,30 @@ void MainWindow::calc_deviations()
     double real_value = a_pair.second;
 
     for (auto& interp_data: m_interpolation_data) {
-      double interp_value = interp_data->interpolation(a_pair.first);
-      double interp_deviation = deviation(real_value, interp_value);
-      interp_data->deviation_labels[point_number]->setText(QString::number(interp_deviation));
       interp_data->deviation_labels[point_number]->setPalette(m_default_color);
 
-      double pos_interp_deviation = abs(interp_deviation);
-      interp_data->worst_point.add(pos_interp_deviation);
+      if (interp_data->enable) {
+        double interp_value = interp_data->interpolation(a_pair.first);
+        double interp_deviation = deviation(real_value, interp_value);
 
-      if (pos_interp_deviation > m_mark_limit) {
-        interp_data->deviation_labels[point_number]->setPalette(m_limit_color);
+        interp_data->deviation_labels[point_number]->setText(QString::number(interp_deviation));
+
+        double pos_interp_deviation = abs(interp_deviation);
+        interp_data->worst_point.add(pos_interp_deviation);
+
+        if (pos_interp_deviation > m_mark_limit) {
+          interp_data->deviation_labels[point_number]->setPalette(m_limit_color);
+        }
+      } else {
+        interp_data->deviation_labels[point_number]->setText("");
       }
     }
     point_number++;
   }
   for (auto& interp_data: m_interpolation_data) {
-    interp_data->deviation_labels[interp_data->worst_point.get_index()]->setPalette(m_worst_color);
+    if (interp_data->enable) {
+      interp_data->deviation_labels[interp_data->worst_point.get_index()]->setPalette(m_worst_color);
+    }
   }
 }
 
@@ -200,7 +208,7 @@ void MainWindow::draw_lines(double a_min, double a_max, double a_step)
   for (auto& interp: m_interpolation_data) {
     interp->series->clear();
 
-    if (interp->draw) {
+    if (interp->enable) {
       for (double x = a_min; x < a_max; x += a_step) {
         double interpolation_value = interp->interpolation(x);
         if (m_draw_relative_points) {
@@ -516,18 +524,18 @@ void MainWindow::on_spinbox_mark_limit_valueChanged(double a_value)
 
 void MainWindow::on_draw_linear_checkbox_stateChanged(int a_state)
 {
-  m_interpolation_data[it_linear]->draw = a_state;
+  m_interpolation_data[it_linear]->enable = a_state;
   repaint_spline();
 }
 
 void MainWindow::on_draw_cubic_checkbox_stateChanged(int a_state)
 {
-  m_interpolation_data[it_cubic]->draw = a_state;
+  m_interpolation_data[it_cubic]->enable = a_state;
   repaint_spline();
 }
 
 void MainWindow::on_draw_hermite_checkbox_stateChanged(int a_state)
 {
-  m_interpolation_data[it_hermite]->draw = a_state;
+  m_interpolation_data[it_hermite]->enable = a_state;
   repaint_spline();
 }
