@@ -97,6 +97,7 @@ void MainWindow::create_chart()
   header->addWidget(new QLabel("Hermite", this));
   header->addWidget(new QLabel("Linear", this));
   ui->buttons_layout->addLayout(header);
+  ui->buttons_layout->addStretch();
 
   ui->xmin_spinbox->setValue(m_min_x);
   ui->xmax_spinbox->setValue(m_max_x);
@@ -302,6 +303,7 @@ MainWindow::input_data_error_t MainWindow::verify_data(const vector<double>& a_x
 
 void MainWindow::create_control(const vector<double>& a_x)
 {
+  delete ui->buttons_layout->takeAt(ui->buttons_layout->count() - 1);
   for (size_t i = 0; i < a_x.size(); i++) {
     auto x = a_x[i];
 
@@ -324,6 +326,7 @@ void MainWindow::create_control(const vector<double>& a_x)
       mp_deviation_layouts[i]->addWidget(interpolation->deviation_labels[i]);
     }
   }
+  ui->buttons_layout->addStretch();
 }
 
 void MainWindow::reset_deviation_layouts()
