@@ -173,6 +173,27 @@ void MainWindow::calc_deviations()
   }
 }
 
+void MainWindow::repaint_data_line()
+{
+  m_data_series->clear();
+  for (size_t i = 0; i < m_x.size(); i++) {
+    double value = m_y[i];
+    if (m_draw_relative_points) {
+      value = (value / m_x[i] - m_y.front() / m_x.front()) * 100;
+    }
+    m_min_y = m_min_y > value ? value : m_min_y;
+    m_max_y = m_max_y < value ? value : m_max_y;
+    m_data_series->append(m_x[i], value);
+  }
+}
+
+void MainWindow::set_nice_axis_numbers(QValueAxis *a_axis, double a_min, double a_max, size_t a_ticks_count)
+{
+  double tick_interval = calc_chart_tick_interval(a_min, a_max, a_ticks_count);
+  a_axis->setTickInterval(tick_interval);
+  a_axis->setTickType(QValueAxis::TickType::TicksDynamic);
+}
+
 void MainWindow::draw_lines(double a_min, double a_max, double a_step)
 {
   mp_axisX->setTickType(QValueAxis::TickType::TicksFixed);
@@ -205,13 +226,8 @@ void MainWindow::draw_lines(double a_min, double a_max, double a_step)
     set_new_zoom_start();
   }
 
-  double x_tick_interval = calc_chart_tick_interval(mp_axisX->min(), mp_axisX->max(), m_tick_interval_count);
-  mp_axisX->setTickInterval(x_tick_interval);
-  mp_axisX->setTickType(QValueAxis::TickType::TicksDynamic);
-
-  double y_tick_interval = calc_chart_tick_interval(mp_axisY->min(), mp_axisY->max(), m_tick_interval_count);
-  mp_axisY->setTickInterval(y_tick_interval);
-  mp_axisY->setTickType(QValueAxis::TickType::TicksDynamic);
+  set_nice_axis_numbers(mp_axisX, mp_axisX->min(), mp_axisX->max(), m_tick_interval_count);
+  set_nice_axis_numbers(mp_axisY, mp_axisY->min(), mp_axisY->max(), m_tick_interval_count);
 }
 
 std::tuple<double, double> get_double_power(double a_val)
@@ -229,22 +245,19 @@ std::tuple<double, double> get_double_power(double a_val)
 double MainWindow::calc_chart_tick_interval(double a_min, double a_max,
   size_t a_ticks_count)
 {
-  std::array<double, 3> nice_numbers{ 1, 2, 5 };
+  static constexpr std::array<double, 3> nice_numbers{ 1, 2, 5 };
   double bad_tick_interval = (a_max - a_min) / a_ticks_count;
 
   auto [val, power] = get_double_power(bad_tick_interval);
 
-  double nice = 1;
-  double diff = numeric_limits<double>::max();
+  auto nice_it = std::lower_bound(nice_numbers.begin(), nice_numbers.end(), val);
 
-  for (auto number: nice_numbers) {
-    double cur_diff = std::abs(number - val);
-    if (diff > cur_diff) {
-      diff = cur_diff;
-      nice = number;
-    }
+  if (nice_it != nice_numbers.begin()) {
+    auto difference = val - *nice_it;
+    auto next_difference = *(nice_it + 1) - val;
+    if (next_difference < difference) nice_it--;
   }
-  return nice * pow(10, power);
+  return *nice_it * pow(10, power);
 }
 
 void MainWindow::redraw_spline(bool a_checked)
@@ -344,20 +357,6 @@ void MainWindow::reinit_control_buttons()
 
   reset_deviation_layouts();
   create_control(m_x);
-}
-
-void MainWindow::repaint_data_line()
-{
-  m_data_series->clear();
-  for (size_t i = 0; i < m_x.size(); i++) {
-    double value = m_y[i];
-    if (m_draw_relative_points) {
-      value = (value / m_x[i] - m_y.front() / m_x.front()) * 100;
-    }
-    m_min_y = m_min_y > value ? value : m_min_y;
-    m_max_y = m_max_y < value ? value : m_max_y;
-    m_data_series->append(m_x[i], value);
-  }
 }
 
 void MainWindow::repaint_spline()
@@ -475,10 +474,7 @@ void MainWindow::chart_was_zoomed(qreal a_min, qreal a_max)
 {
   QObject* obj = QObject::sender();
   QValueAxis* zoomed_axis = qobject_cast<QValueAxis*>(obj);
-
-  double tick_interval = calc_chart_tick_interval(a_min, a_max, m_tick_interval_count);
-  zoomed_axis->setTickInterval(tick_interval);
-  zoomed_axis->setTickType(QValueAxis::TickType::TicksDynamic);
+  set_nice_axis_numbers(zoomed_axis, a_min, a_max, m_tick_interval_count);
 
   if (zoomed_axis == mp_axisY) {
     if (m_save_zoom) {

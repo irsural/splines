@@ -139,6 +139,7 @@ private:
   void calc_splines(const vector<double> &a_correct_points);
   double deviation(double a_real, double a_calculated);
   void calc_deviations();
+  void set_nice_axis_numbers(QValueAxis *a_axis, double a_min, double a_max, size_t a_ticks_count);
   void draw_lines(double a_min, double a_max, double a_step);
   double calc_chart_tick_interval(double a_min, double a_max, size_t a_ticks_count);
 
