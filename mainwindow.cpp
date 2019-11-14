@@ -63,12 +63,11 @@ MainWindow::~MainWindow()
 
 void MainWindow::create_chart()
 {
-  mp_axisX->setLabelFormat("%g");
-  mp_axisY->setLabelFormat("%g");
-
   QChart* chart = ui->chart_widget->chart();
   chart->addAxis(mp_axisX, Qt::AlignBottom);
   chart->addAxis(mp_axisY, Qt::AlignLeft);
+  mp_axisX->setLabelFormat("%g");
+  mp_axisY->setLabelFormat("%g");
 
   m_data_series->setName("Input data");
   m_interpolation_data[it_cubic]->series->setName("Cubic");
@@ -125,10 +124,9 @@ void MainWindow::calc_splines(const vector<double> &a_correct_points)
     }
   }
 
-  m_cubic_spline.set_points(a_correct_points.data(), correct_values.data(), a_correct_points.size());
-  m_hermite_spline.set_points(a_correct_points.data(), correct_values.data(), a_correct_points.size());
-  m_linear_interpolation.set_points(a_correct_points.data(), correct_values.data(), a_correct_points.size());
-
+  for (auto &interp_data: m_interpolation_data) {
+    interp_data->interpolation.set_points(a_correct_points.data(), correct_values.data(), a_correct_points.size());
+  }
   calc_deviations();
 }
 
@@ -273,8 +271,8 @@ void MainWindow::redraw_spline(bool a_checked)
     std::sort(m_correct_points.begin(), m_correct_points.end());
   } else {
     if (m_correct_points.size() > 2) {
-      m_correct_points.erase(std::remove(m_correct_points.begin(),
-        m_correct_points.end(), point_val), m_correct_points.end());
+      m_correct_points.erase(std::remove(m_correct_points.begin(), m_correct_points.end(), point_val),
+        m_correct_points.end());
     } else {
       pressed_cb->setChecked(true);
     }
