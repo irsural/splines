@@ -5,6 +5,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <algorithm>
+#include <memory>
 
 
 import_points_dialog_t::import_points_dialog_t(const std::vector<double> &a_correct_points,
@@ -104,11 +105,11 @@ void import_points_dialog_t::insert_points_to_table(QFile* a_file)
       m_data_format_error = true;
     }
 
-    QList<QStandardItem *> standardItemsList;
+    QList<QStandardItem*> standardItemsList;
     for (auto& item : values) {
         standardItemsList.append(new QStandardItem(item));
     }
-    m_csv_model->insertRow(m_csv_model->rowCount(), standardItemsList);
+    m_csv_model->appendRow(standardItemsList);
   }
   ui->points_table->resizeRowsToContents();
   ui->points_table->resizeColumnsToContents();

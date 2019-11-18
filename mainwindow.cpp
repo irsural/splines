@@ -58,6 +58,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+  delete_deviation_layouts();
   delete ui;
 }
 
@@ -327,7 +328,7 @@ void MainWindow::create_control(const vector<double>& a_x)
   ui->buttons_layout->addStretch();
 }
 
-void MainWindow::reset_deviation_layouts()
+void MainWindow::delete_deviation_layouts()
 {
   for (size_t i = 0; i < mp_deviation_layouts.size(); i++) {
     if (mp_deviation_layouts[i] != nullptr) delete mp_deviation_layouts[i];
@@ -336,12 +337,6 @@ void MainWindow::reset_deviation_layouts()
     for (auto& interpolation: m_interpolation_data) {
       if (interpolation->deviation_labels[i] != nullptr) delete interpolation->deviation_labels[i];
     }
-  }
-
-  mp_deviation_layouts.resize(m_x.size());
-  mp_point_checkboxes.resize(m_x.size());
-  for (auto& interpolation: m_interpolation_data) {
-    interpolation->deviation_labels.resize(m_x.size());
   }
 }
 
@@ -353,7 +348,14 @@ void MainWindow::reinit_control_buttons()
   m_max_y = std::numeric_limits<double>::min();
   m_x_step = m_auto_step ? (m_x.back() - m_x.front()) / 400 : m_x_step;
 
-  reset_deviation_layouts();
+  delete_deviation_layouts();
+
+  mp_deviation_layouts.resize(m_x.size());
+  mp_point_checkboxes.resize(m_x.size());
+  for (auto& interpolation: m_interpolation_data) {
+    interpolation->deviation_labels.resize(m_x.size());
+  }
+
   create_control(m_x);
 }
 

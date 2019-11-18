@@ -146,7 +146,7 @@ private:
   void repaint_data_line();
   void repaint_spline();
 
-  void reset_deviation_layouts();
+  void delete_deviation_layouts();
   void reinit_control_buttons();
 
   void keyPressEvent(QKeyEvent *a_event);
