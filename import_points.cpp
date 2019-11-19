@@ -140,6 +140,11 @@ void import_points_t::set_next_data(move_direction_t a_direction)
   }
 }
 
+import_points_dialog_t::select_t import_points_t::get_select_type()
+{
+  return m_selected;
+}
+
 QString import_points_t::get_x()
 {
   QString current_x_str = "";

@@ -177,10 +177,21 @@ void MainWindow::calc_deviations()
 void MainWindow::repaint_data_line()
 {
   m_data_series->clear();
+  double current_x = m_points_importer->get_x().replace(",", ".").toDouble();
+
   for (size_t i = 0; i < m_x.size(); i++) {
     double value = m_y[i];
     if (m_draw_relative_points) {
-      value = value / m_x[i];
+      switch(m_points_importer->get_select_type()) {
+        case import_points_dialog_t::select_t::cols: {
+          value = value / m_x[i];
+        } break;
+        case import_points_dialog_t::select_t::rows: {
+          value = value / current_x;
+        } break;
+        default: {
+        } break;
+      }
     }
     m_min_y = m_min_y > value ? value : m_min_y;
     m_max_y = m_max_y < value ? value : m_max_y;
@@ -205,6 +216,8 @@ void MainWindow::draw_lines(double a_min, double a_max, double a_step)
 
   repaint_data_line();
 
+  double current_x = m_points_importer->get_x().replace(",", ".").toDouble();
+
   for (auto& interp: m_interpolation_data) {
     interp->series->clear();
 
@@ -212,7 +225,16 @@ void MainWindow::draw_lines(double a_min, double a_max, double a_step)
       for (double x = a_min; x < a_max; x += a_step) {
         double interpolation_value = interp->interpolation(x);
         if (m_draw_relative_points) {
-          interpolation_value = interpolation_value / x;
+          switch(m_points_importer->get_select_type()) {
+            case import_points_dialog_t::select_t::cols: {
+              interpolation_value = interpolation_value / x;
+            } break;
+            case import_points_dialog_t::select_t::rows: {
+              interpolation_value = interpolation_value / current_x;
+            } break;
+            default: {
+            } break;
+          }
         }
         m_min_y = m_min_y > interpolation_value ? interpolation_value : m_min_y;
         m_max_y = m_max_y < interpolation_value ? interpolation_value : m_max_y;

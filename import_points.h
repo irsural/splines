@@ -15,8 +15,8 @@ public:
 
   void create_import_points_dialog(QWidget *a_parent);
   bool are_correct_points_valid(const std::vector<double> &a_correct_points, const std::vector<double> &a_x);
-//  void set_correct_points(const std::vector<double>& a_correct_points);
   void set_next_data(move_direction_t a_direction);
+  import_points_dialog_t::select_t get_select_type();
   QString get_x();
 
 signals:
